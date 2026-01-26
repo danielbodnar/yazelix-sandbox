@@ -56,6 +56,8 @@ Allow 2-3 minutes for initial provisioning before making requests.
 
 ### Command Execution
 
+> **Security Warning**: The `/exec` endpoint enables arbitrary shell command execution within the sandbox container. Before exposing this service publicly, you **must** implement authentication. See the [Security](#security) section below.
+
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/exec` | POST | Execute arbitrary shell command |
@@ -215,11 +217,46 @@ The Dockerfile sets up the container with Nix package manager and installs all Y
 - Yazi with file type associations
 - Zellij with Yazelix-compatible settings
 
+## Security
+
+This sandbox provides powerful capabilities including arbitrary command execution. Before deploying to production, implement appropriate access controls:
+
+### Required for Production Deployment
+
+1. **Authentication** - Add token-based authentication (e.g., Bearer tokens, API keys)
+   ```typescript
+   // Example: Add to the fetch handler
+   const authHeader = request.headers.get("Authorization");
+   if (authHeader !== `Bearer ${env.API_SECRET}`) {
+     return new Response("Unauthorized", { status: 401 });
+   }
+   ```
+
+2. **IP Allowlisting** - Restrict access to known IP addresses via Cloudflare Access or WAF rules
+
+3. **Rate Limiting** - Prevent abuse by limiting requests per client
+
+### Built-in Protections
+
+- **Path Validation**: File operations are restricted to `/workspace` directory
+- **Shell Escaping**: User-provided paths are properly escaped to prevent command injection
+- **Isolated Containers**: Each sandbox instance runs in an isolated container environment
+- **CORS Headers**: Cross-origin requests are handled with appropriate headers
+
+### Endpoints by Risk Level
+
+| Risk | Endpoints | Recommendation |
+|------|-----------|----------------|
+| **High** | `/exec` | Requires authentication; enables arbitrary command execution |
+| **Medium** | `/file` (POST/DELETE), `/setup` | Requires authentication; modifies filesystem |
+| **Low** | `/health`, `/status`, `/files`, `/file` (GET) | Read-only; safe for monitoring |
+
 ## Limitations
 
 - Interactive terminal sessions are not supported via HTTP API
 - Use for headless operations, file management, and code execution
 - For interactive Yazelix experience, use the desktop/terminal installation
+- File operations are restricted to the `/workspace` directory
 
 ## License
 

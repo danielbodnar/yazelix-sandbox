@@ -16,10 +16,56 @@ interface Env {
 // Nix profile source command
 const NIX_SOURCE = "source /root/.nix-profile/etc/profile.d/nix.sh";
 
+// Allowed workspace base path for file operations
+const WORKSPACE_BASE = "/workspace";
+
+// CORS headers for all responses
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Max-Age": "86400",
+};
+
+// Validate that a path is within the allowed workspace
+function isPathSafe(filePath: string): boolean {
+  const normalizedPath = filePath.replace(/\/+/g, "/").replace(/\/$/, "");
+  const resolved = normalizedPath.startsWith("/")
+    ? normalizedPath
+    : `${WORKSPACE_BASE}/${normalizedPath}`;
+
+  // Check path doesn't escape workspace via traversal
+  const parts = resolved.split("/");
+  let depth = 0;
+  for (const part of parts) {
+    if (part === "..") {
+      depth--;
+      if (depth < 0) return false;
+    } else if (part !== "" && part !== ".") {
+      depth++;
+    }
+  }
+
+  return resolved.startsWith(WORKSPACE_BASE);
+}
+
+// Shell-escape a string for safe use in commands
+function shellEscape(str: string): string {
+  return `'${str.replace(/'/g, "'\\''")}'`;
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     const path = url.pathname;
+
+    // Handle CORS preflight requests
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: CORS_HEADERS,
+      });
+    }
 
     // Get or create sandbox instance
     const sandboxId = url.searchParams.get("id") || "default";
@@ -117,13 +163,13 @@ export default {
 async function handleStatus(
   sandbox: ReturnType<typeof getSandbox>
 ): Promise<Response> {
-  // Check which tools are available
+  // Check which tools are available (hx is the Helix binary name)
   const toolChecks = await Promise.all([
-    sandbox.exec(`${NIX_SOURCE} && which helix || echo "not found"`),
+    sandbox.exec(`${NIX_SOURCE} && which hx || echo "not found"`),
     sandbox.exec(`${NIX_SOURCE} && which yazi || echo "not found"`),
     sandbox.exec(`${NIX_SOURCE} && which zellij || echo "not found"`),
     sandbox.exec(`${NIX_SOURCE} && which nu || echo "not found"`),
-    sandbox.exec(`${NIX_SOURCE} && helix --version 2>/dev/null || echo "n/a"`),
+    sandbox.exec(`${NIX_SOURCE} && hx --version 2>/dev/null || echo "n/a"`),
     sandbox.exec(`${NIX_SOURCE} && yazi --version 2>/dev/null || echo "n/a"`),
     sandbox.exec(
       `${NIX_SOURCE} && zellij --version 2>/dev/null || echo "n/a"`
@@ -172,15 +218,45 @@ async function handleSetup(
   });
 
   // Step 2: Clone Yazelix repository (configs only)
-  const cloneResult = await sandbox.exec(
-    "cd /workspace/yazelix && " +
-      "git clone --depth 1 --sparse https://github.com/luccahuguet/yazelix.git repo 2>&1 || true && " +
-      "cd repo && git sparse-checkout set configs 2>&1 || true"
+  // Check if already cloned first
+  const checkExistsResult = await sandbox.exec(
+    "test -d /workspace/yazelix/repo/.git && echo 'exists' || echo 'not_exists'"
   );
-  steps.push({
-    step: "clone_configs",
-    result: { success: true, output: cloneResult.stdout },
-  });
+  const alreadyCloned = checkExistsResult.stdout.trim() === "exists";
+
+  if (alreadyCloned) {
+    steps.push({
+      step: "clone_configs",
+      result: { success: true, output: "Repository already cloned, skipping" },
+    });
+  } else {
+    const cloneResult = await sandbox.exec(
+      "cd /workspace/yazelix && " +
+        "git clone --depth 1 --sparse https://github.com/luccahuguet/yazelix.git repo 2>&1"
+    );
+    const cloneSuccess = cloneResult.exitCode === 0;
+
+    if (cloneSuccess) {
+      const sparseResult = await sandbox.exec(
+        "cd /workspace/yazelix/repo && git sparse-checkout set configs 2>&1"
+      );
+      steps.push({
+        step: "clone_configs",
+        result: {
+          success: sparseResult.exitCode === 0,
+          output: cloneResult.stdout + "\n" + sparseResult.stdout,
+        },
+      });
+    } else {
+      steps.push({
+        step: "clone_configs",
+        result: {
+          success: false,
+          output: cloneResult.stdout + "\n" + cloneResult.stderr,
+        },
+      });
+    }
+  }
 
   // Step 3: Setup Helix config
   const helixConfigResult = await sandbox.exec(`
@@ -275,9 +351,9 @@ EOF
     },
   });
 
-  // Step 6: Verify setup
+  // Step 6: Verify setup (hx is the Helix binary name)
   const verifyResult = await sandbox.exec(
-    `${NIX_SOURCE} && helix --version && yazi --version && zellij --version && nu --version`
+    `${NIX_SOURCE} && hx --version && yazi --version && zellij --version && nu --version`
   );
   steps.push({
     step: "verify_tools",
@@ -329,11 +405,11 @@ async function handleHelix(
 
   switch (action) {
     case "version":
-      const versionResult = await sandbox.exec(`${NIX_SOURCE} && helix --version`);
+      const versionResult = await sandbox.exec(`${NIX_SOURCE} && hx --version`);
       return jsonResponse({ version: versionResult.stdout.trim() });
 
     case "health":
-      const healthResult = await sandbox.exec(`${NIX_SOURCE} && helix --health`);
+      const healthResult = await sandbox.exec(`${NIX_SOURCE} && hx --health`);
       return jsonResponse({
         health: healthResult.stdout,
         success: healthResult.exitCode === 0,
@@ -341,7 +417,7 @@ async function handleHelix(
 
     case "grammar":
       const grammarResult = await sandbox.exec(
-        `${NIX_SOURCE} && helix --grammar fetch && helix --grammar build`
+        `${NIX_SOURCE} && hx --grammar fetch && hx --grammar build`
       );
       return jsonResponse({
         output: grammarResult.stdout,
@@ -352,15 +428,19 @@ async function handleHelix(
       if (!file) {
         return jsonResponse({ error: "Missing 'file' parameter" }, 400);
       }
-      // For headless operation, we can open and immediately close
-      // In a real terminal session, this would be interactive
+      // Validate path is within workspace
+      if (!isPathSafe(file)) {
+        return jsonResponse({ error: "Path must be within /workspace" }, 400);
+      }
+      // Use proper file existence check instead of helix --health
       const openResult = await sandbox.exec(
-        `${NIX_SOURCE} && helix --health ${file} 2>&1 || echo "File: ${file}"`
+        `test -f ${shellEscape(file)} && echo "exists" || echo "not_found"`
       );
+      const fileExists = openResult.stdout.trim() === "exists";
       return jsonResponse({
         file,
-        message: "File ready for editing",
-        exists: openResult.exitCode === 0,
+        message: fileExists ? "File exists and ready for editing" : "File does not exist",
+        exists: fileExists,
       });
 
     case "edit":
@@ -430,10 +510,8 @@ async function handleZellij(
 ): Promise<Response> {
   const body = (await request.json()) as {
     action?: string;
-    session?: string;
-    layout?: string;
   };
-  const { action, session = "yazelix", layout } = body;
+  const { action } = body;
 
   switch (action) {
     case "version":
@@ -560,7 +638,16 @@ async function handleDeleteFile(
     return jsonResponse({ error: "Missing 'path' query parameter" }, 400);
   }
 
-  const result = await sandbox.exec(`rm -f ${path}`);
+  // Validate path is within workspace to prevent path traversal attacks
+  if (!isPathSafe(path)) {
+    return jsonResponse(
+      { error: "Path must be within /workspace and cannot contain path traversal" },
+      400
+    );
+  }
+
+  // Use shell-escaped path with -- to prevent flag injection
+  const result = await sandbox.exec(`rm -f -- ${shellEscape(path)}`);
 
   return jsonResponse({
     path,
@@ -575,7 +662,7 @@ function jsonResponse(data: object, status = 200): Response {
     status,
     headers: {
       "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
+      ...CORS_HEADERS,
     },
   });
 }

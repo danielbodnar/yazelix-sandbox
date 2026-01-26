@@ -11,8 +11,10 @@
     "cf-typegen": "wrangler types",
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "@cloudflare/sandbox": "latest"
+  },
   "devDependencies": {
-    "@cloudflare/sandbox": "latest",
     "@cloudflare/workers-types": "^4.20250523.0",
     "@types/node": "^22.15.21",
     "typescript": "^5.9.3",
