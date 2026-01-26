@@ -2,6 +2,8 @@
 
 Run Yazelix (a terminal IDE combining Yazi, Zellij, and Helix) in an isolated Cloudflare Sandbox environment.
 
+> **Note**: This implementation uses direct binary installations instead of Nix for Cloudflare Containers compatibility. See [MIGRATION.md](./MIGRATION.md) for details on the migration from Nix.
+
 ## Prerequisites
 
 - Node.js 16.17.0+
@@ -194,16 +196,16 @@ curl -X POST http://localhost:8787/helix \
 │  └─────────────────┬───────────────────────────────┘    │
 │                    │                                     │
 │  ┌─────────────────▼───────────────────────────────┐    │
-│  │           Sandbox Container (Durable Object)     │    │
+│  │        Sandbox Container (Durable Object)        │    │
 │  │  ┌─────────────────────────────────────────┐    │    │
-│  │  │              Nix Environment             │    │    │
+│  │  │         Direct Binary Installation       │    │    │
 │  │  │  • Helix    • Yazi      • Zellij        │    │    │
 │  │  │  • Nushell  • Starship  • Zoxide        │    │    │
 │  │  │  • ripgrep  • fd        • lazygit       │    │    │
 │  │  └─────────────────────────────────────────┘    │    │
 │  │  ┌─────────────────────────────────────────┐    │    │
 │  │  │              /workspace                  │    │    │
-│  │  │  Persistent file storage                 │    │    │
+│  │  │  (Optional: R2 bucket for persistence)   │    │    │
 │  │  └─────────────────────────────────────────┘    │    │
 │  └─────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────┘
@@ -211,7 +213,7 @@ curl -X POST http://localhost:8787/helix \
 
 ## Configuration
 
-The Dockerfile sets up the container with Nix package manager and installs all Yazelix tools. The `/setup` endpoint configures:
+The `Dockerfile.yazelix` uses a multi-stage build to download pre-built binaries directly (no Nix required). The `/setup` endpoint configures:
 
 - Helix with Catppuccin theme and sensible defaults
 - Yazi with file type associations

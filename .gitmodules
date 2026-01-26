@@ -1,0 +1,6 @@
+[submodule "docs/cloudflare/docs"]
+	path = docs/cloudflare/docs
+	url = https://github.com/cloudflare/cloudflare-docs
+[submodule "cloudflare/sandbox-sdk"]
+	path = cloudflare/sandbox-sdk
+	url = https://github.com/cloudflare/sandbox-sdk

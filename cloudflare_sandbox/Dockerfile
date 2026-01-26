@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install Nix package manager (single-user mode for container)
 # Pin to specific version with SHA256 checksum for supply chain security
 ARG NIX_VERSION=2.24.10
-ARG NIX_SHA256=5b0ea28ab4dc6edfb3a9c3f3c2c16a14f6cf9206e5d44ec9f51e8fde77f55c3f
+ARG NIX_SHA256=0f72926b1c55d787fd1e1d3a23de65da5cf7638c3fb7772500c55112bc99b799
 RUN curl -fsSL -o /tmp/nix-install.sh "https://releases.nixos.org/nix/nix-${NIX_VERSION}/install" && \
     echo "${NIX_SHA256}  /tmp/nix-install.sh" | sha256sum -c - && \
     chmod +x /tmp/nix-install.sh && \

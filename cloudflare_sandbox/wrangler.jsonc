@@ -7,14 +7,20 @@
   "observability": {
     "enabled": true
   },
-  "containers": {
-    "SANDBOX": {
-      "image": "./Dockerfile",
+
+  // Container configuration for Yazelix development environment
+  // Uses standard-1 instance type for adequate memory (4 GiB) and disk (8 GB)
+  // Helix + Yazi + Zellij require more resources than lite instances provide
+  "containers": [
+    {
       "class_name": "Sandbox",
-      "instance_type": "lite",
+      "image": "./Dockerfile.yazelix",
+      "instance_type": "standard-1",
       "max_instances": 5
     }
-  },
+  ],
+
+  // Durable Objects binding for persistent sandbox state
   "durable_objects": {
     "bindings": [
       {
@@ -23,10 +29,28 @@
       }
     ]
   },
+
+  // SQLite migrations for Durable Objects
   "migrations": [
     {
       "tag": "v1",
       "new_sqlite_classes": ["Sandbox"]
     }
-  ]
+  ],
+
+  // Optional: R2 bucket for persistent storage across sandbox lifecycles
+  // Uncomment to enable persistent workspace data
+  // "r2_buckets": [
+  //   {
+  //     "binding": "WORKSPACE_BUCKET",
+  //     "bucket_name": "yazelix-workspaces",
+  //     "preview_bucket_name": "yazelix-workspaces-dev"
+  //   }
+  // ],
+
+  // Environment variables for container configuration
+  "vars": {
+    "SANDBOX_LOG_LEVEL": "info",
+    "SANDBOX_LOG_FORMAT": "pretty"
+  }
 }

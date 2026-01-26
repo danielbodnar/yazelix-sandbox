@@ -1,0 +1,367 @@
+# Yazelix Sandbox Container - Nix-free Implementation
+# Cloudflare Containers compatible with direct binary installations
+# 
+# This Dockerfile replaces the Nix-based approach with direct binary downloads
+# and apt-get installations for Cloudflare Containers compatibility.
+#
+# Base: cloudflare/sandbox (Ubuntu 22.04 with Node.js, Bun, Python)
+# Target: standard-1 instance (4 GiB RAM, 8 GB disk, 1/2 vCPU)
+
+# ============================================================================
+# Stage 1: Binary downloads (parallel downloads for speed)
+# ============================================================================
+FROM ubuntu:22.04 AS binary-downloader
+
+# Prevent interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Accept architecture for multi-arch builds
+ARG TARGETARCH
+
+# Install download tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl wget ca-certificates xz-utils unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /downloads
+
+# Download Helix editor (latest release)
+# https://github.com/helix-editor/helix/releases
+ARG HELIX_VERSION=25.07.1
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+        HELIX_ARCH="x86_64-linux"; \
+    elif [ "$TARGETARCH" = "arm64" ]; then \
+        HELIX_ARCH="aarch64-linux"; \
+    fi && \
+    wget -q "https://github.com/helix-editor/helix/releases/download/${HELIX_VERSION}/helix-${HELIX_VERSION}-${HELIX_ARCH}.tar.xz" && \
+    tar -xJf helix-*.tar.xz && \
+    rm helix-*.tar.xz && \
+    mv helix-${HELIX_VERSION}-${HELIX_ARCH} helix
+
+# Download Zellij terminal multiplexer
+# https://github.com/zellij-org/zellij/releases
+ARG ZELLIJ_VERSION=0.43.1
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+        ZELLIJ_ARCH="x86_64-unknown-linux-musl"; \
+    elif [ "$TARGETARCH" = "arm64" ]; then \
+        ZELLIJ_ARCH="aarch64-unknown-linux-musl"; \
+    fi && \
+    wget -q "https://github.com/zellij-org/zellij/releases/download/v${ZELLIJ_VERSION}/zellij-${ZELLIJ_ARCH}.tar.gz" && \
+    tar -xzf zellij-*.tar.gz && \
+    chmod +x zellij
+
+# Download Yazi file manager
+# https://github.com/sxyazi/yazi/releases
+ARG YAZI_VERSION=26.1.22
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+        YAZI_ARCH="x86_64-unknown-linux-musl"; \
+    elif [ "$TARGETARCH" = "arm64" ]; then \
+        YAZI_ARCH="aarch64-unknown-linux-musl"; \
+    fi && \
+    wget -q "https://github.com/sxyazi/yazi/releases/download/v${YAZI_VERSION}/yazi-${YAZI_ARCH}.zip" && \
+    unzip -q yazi-*.zip && \
+    mv yazi-*/yazi yazi-bin && \
+    mv yazi-*/ya ya-bin && \
+    chmod +x yazi-bin ya-bin
+
+# Download Nushell
+# https://github.com/nushell/nushell/releases
+ARG NUSHELL_VERSION=0.110.0
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+        NU_ARCH="x86_64-unknown-linux-musl"; \
+    elif [ "$TARGETARCH" = "arm64" ]; then \
+        NU_ARCH="aarch64-unknown-linux-musl"; \
+    fi && \
+    wget -q "https://github.com/nushell/nushell/releases/download/${NUSHELL_VERSION}/nu-${NUSHELL_VERSION}-${NU_ARCH}.tar.gz" && \
+    tar -xzf nu-*.tar.gz && \
+    mv nu-*/nu nu-bin && \
+    chmod +x nu-bin
+
+# Download Starship prompt
+# https://github.com/starship/starship/releases
+ARG STARSHIP_VERSION=1.24.2
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+        STARSHIP_ARCH="x86_64-unknown-linux-musl"; \
+    elif [ "$TARGETARCH" = "arm64" ]; then \
+        STARSHIP_ARCH="aarch64-unknown-linux-musl"; \
+    fi && \
+    wget -q "https://github.com/starship/starship/releases/download/v${STARSHIP_VERSION}/starship-${STARSHIP_ARCH}.tar.gz" && \
+    tar -xzf starship-*.tar.gz && \
+    chmod +x starship
+
+# Download zoxide (cd replacement)
+# https://github.com/ajeetdsouza/zoxide/releases
+ARG ZOXIDE_VERSION=0.9.8
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+        ZOXIDE_ARCH="x86_64-unknown-linux-musl"; \
+    elif [ "$TARGETARCH" = "arm64" ]; then \
+        ZOXIDE_ARCH="aarch64-unknown-linux-musl"; \
+    fi && \
+    wget -q "https://github.com/ajeetdsouza/zoxide/releases/download/v${ZOXIDE_VERSION}/zoxide-${ZOXIDE_VERSION}-${ZOXIDE_ARCH}.tar.gz" && \
+    tar -xzf zoxide-*.tar.gz && \
+    chmod +x zoxide
+
+# Download fzf (fuzzy finder)
+# https://github.com/junegunn/fzf/releases
+ARG FZF_VERSION=0.67.0
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+        FZF_ARCH="linux_amd64"; \
+    elif [ "$TARGETARCH" = "arm64" ]; then \
+        FZF_ARCH="linux_arm64"; \
+    fi && \
+    wget -q "https://github.com/junegunn/fzf/releases/download/v${FZF_VERSION}/fzf-${FZF_VERSION}-${FZF_ARCH}.tar.gz" && \
+    tar -xzf fzf-*.tar.gz && \
+    chmod +x fzf
+
+# Download ripgrep
+# https://github.com/BurntSushi/ripgrep/releases
+ARG RIPGREP_VERSION=15.1.0
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+        RG_ARCH="x86_64-unknown-linux-musl"; \
+    elif [ "$TARGETARCH" = "arm64" ]; then \
+        RG_ARCH="aarch64-unknown-linux-gnu"; \
+    fi && \
+    wget -q "https://github.com/BurntSushi/ripgrep/releases/download/${RIPGREP_VERSION}/ripgrep-${RIPGREP_VERSION}-${RG_ARCH}.tar.gz" && \
+    tar -xzf ripgrep-*.tar.gz && \
+    mv ripgrep-*/rg rg && \
+    chmod +x rg
+
+# Download fd (find replacement)
+# https://github.com/sharkdp/fd/releases
+ARG FD_VERSION=10.3.0
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+        FD_ARCH="x86_64-unknown-linux-musl"; \
+    elif [ "$TARGETARCH" = "arm64" ]; then \
+        FD_ARCH="aarch64-unknown-linux-gnu"; \
+    fi && \
+    wget -q "https://github.com/sharkdp/fd/releases/download/v${FD_VERSION}/fd-v${FD_VERSION}-${FD_ARCH}.tar.gz" && \
+    tar -xzf fd-*.tar.gz && \
+    mv fd-*/fd fd-bin && \
+    chmod +x fd-bin
+
+# Download bat (cat replacement)
+# https://github.com/sharkdp/bat/releases
+ARG BAT_VERSION=0.26.1
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+        BAT_ARCH="x86_64-unknown-linux-musl"; \
+    elif [ "$TARGETARCH" = "arm64" ]; then \
+        BAT_ARCH="aarch64-unknown-linux-gnu"; \
+    fi && \
+    wget -q "https://github.com/sharkdp/bat/releases/download/v${BAT_VERSION}/bat-v${BAT_VERSION}-${BAT_ARCH}.tar.gz" && \
+    tar -xzf bat-*.tar.gz && \
+    mv bat-*/bat bat-bin && \
+    chmod +x bat-bin
+
+# Download eza (ls replacement)
+# https://github.com/eza-community/eza/releases
+ARG EZA_VERSION=0.23.4
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+        EZA_ARCH="x86_64-unknown-linux-musl"; \
+    elif [ "$TARGETARCH" = "arm64" ]; then \
+        EZA_ARCH="aarch64-unknown-linux-gnu"; \
+    fi && \
+    wget -q "https://github.com/eza-community/eza/releases/download/v${EZA_VERSION}/eza_${EZA_ARCH}.tar.gz" && \
+    tar -xzf eza_*.tar.gz && \
+    chmod +x eza
+
+# Download lazygit
+# https://github.com/jesseduffield/lazygit/releases
+ARG LAZYGIT_VERSION=0.58.1
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+        LAZYGIT_ARCH="Linux_x86_64"; \
+    elif [ "$TARGETARCH" = "arm64" ]; then \
+        LAZYGIT_ARCH="Linux_arm64"; \
+    fi && \
+    wget -q "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_${LAZYGIT_ARCH}.tar.gz" && \
+    tar -xzf lazygit_*.tar.gz && \
+    chmod +x lazygit
+
+# Download zjstatus (Zellij status bar plugin)
+# https://github.com/dj95/zjstatus/releases
+ARG ZJSTATUS_VERSION=0.22.0
+RUN wget -q "https://github.com/dj95/zjstatus/releases/download/v${ZJSTATUS_VERSION}/zjstatus.wasm" && \
+    chmod +x zjstatus.wasm
+
+# ============================================================================
+# Stage 2: Runtime image based on Cloudflare Sandbox
+# ============================================================================
+FROM docker.io/cloudflare/sandbox:0.7.0 AS runtime
+
+# Accept version for labeling
+ARG YAZELIX_VERSION=1.0.0
+
+LABEL org.opencontainers.image.title="Yazelix Sandbox"
+LABEL org.opencontainers.image.description="Yazi + Zellij + Helix terminal IDE in Cloudflare Sandbox"
+LABEL org.opencontainers.image.version="${YAZELIX_VERSION}"
+LABEL org.opencontainers.image.source="https://github.com/luccahuguet/yazelix"
+
+# Required during local development
+EXPOSE 8080
+
+# Install additional system packages
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Core utilities
+    bash \
+    procps \
+    less \
+    tree \
+    # Archive support (for Yazi previews)
+    p7zip-full \
+    # JSON processing
+    jq \
+    # PDF previews (optional, adds ~50MB)
+    poppler-utils \
+    # Image processing (optional, for Yazi image previews)
+    # imagemagick \
+    # ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create directories for binaries and configs
+RUN mkdir -p /usr/local/yazelix/bin \
+             /usr/local/yazelix/share/helix \
+             /usr/local/yazelix/share/zjstatus \
+             /workspace/yazelix \
+             /root/.config/helix \
+             /root/.config/yazi \
+             /root/.config/zellij \
+             /root/.config/nushell
+
+# Copy binaries from downloader stage
+COPY --from=binary-downloader /downloads/helix/hx /usr/local/yazelix/bin/
+COPY --from=binary-downloader /downloads/helix/runtime /usr/local/yazelix/share/helix/runtime
+COPY --from=binary-downloader /downloads/zellij /usr/local/yazelix/bin/
+COPY --from=binary-downloader /downloads/yazi-bin /usr/local/yazelix/bin/yazi
+COPY --from=binary-downloader /downloads/ya-bin /usr/local/yazelix/bin/ya
+COPY --from=binary-downloader /downloads/nu-bin /usr/local/yazelix/bin/nu
+COPY --from=binary-downloader /downloads/starship /usr/local/yazelix/bin/
+COPY --from=binary-downloader /downloads/zoxide /usr/local/yazelix/bin/
+COPY --from=binary-downloader /downloads/fzf /usr/local/yazelix/bin/
+COPY --from=binary-downloader /downloads/rg /usr/local/yazelix/bin/
+COPY --from=binary-downloader /downloads/fd-bin /usr/local/yazelix/bin/fd
+COPY --from=binary-downloader /downloads/bat-bin /usr/local/yazelix/bin/bat
+COPY --from=binary-downloader /downloads/eza /usr/local/yazelix/bin/
+COPY --from=binary-downloader /downloads/lazygit /usr/local/yazelix/bin/
+COPY --from=binary-downloader /downloads/zjstatus.wasm /usr/local/yazelix/share/zjstatus/
+
+# Add yazelix binaries to PATH
+ENV PATH="/usr/local/yazelix/bin:${PATH}"
+
+# Set Helix runtime path
+ENV HELIX_RUNTIME="/usr/local/yazelix/share/helix/runtime"
+
+# Set Yazelix environment variables
+ENV YAZELIX_DIR="/workspace/yazelix"
+ENV IN_YAZELIX_SHELL="true"
+ENV YAZELIX_ZJSTATUS_WASM="/usr/local/yazelix/share/zjstatus/zjstatus.wasm"
+ENV EDITOR="hx"
+ENV YAZI_CONFIG_HOME="/root/.config/yazi"
+
+# Create default Helix config
+RUN cat > /root/.config/helix/config.toml << 'EOF'
+theme = "catppuccin_mocha"
+
+[editor]
+line-number = "relative"
+mouse = true
+cursorline = true
+auto-format = true
+bufferline = "multiple"
+color-modes = true
+
+[editor.cursor-shape]
+insert = "bar"
+normal = "block"
+select = "underline"
+
+[editor.lsp]
+display-messages = true
+display-inlay-hints = true
+
+[editor.file-picker]
+hidden = false
+
+[keys.normal]
+C-s = ":w"
+C-q = ":q"
+EOF
+
+# Create default Yazi config
+RUN cat > /root/.config/yazi/yazi.toml << 'EOF'
+[manager]
+show_hidden = true
+sort_by = "natural"
+sort_sensitive = false
+sort_reverse = false
+sort_dir_first = true
+linemode = "size"
+show_symlink = true
+
+[preview]
+tab_size = 2
+max_width = 600
+max_height = 900
+
+[opener]
+edit = [
+  { run = 'hx "$@"', block = true, for = "unix" },
+]
+EOF
+
+# Create default Zellij config
+RUN cat > /root/.config/zellij/config.kdl << 'EOF'
+theme "catppuccin-mocha"
+default_shell "nu"
+pane_frames true
+simplified_ui false
+default_layout "compact"
+mouse_mode true
+scroll_buffer_size 10000
+copy_on_select true
+EOF
+
+# Create Nushell config with Starship integration
+RUN cat > /root/.config/nushell/config.nu << 'EOF'
+# Yazelix Nushell Configuration
+$env.config = {
+    show_banner: false
+    edit_mode: emacs
+    cursor_shape: {
+        emacs: line
+        vi_insert: line
+        vi_normal: block
+    }
+}
+
+# Initialize zoxide
+source ~/.config/nushell/zoxide.nu
+
+# Initialize Starship prompt
+use ~/.config/nushell/starship.nu
+EOF
+
+# Generate zoxide init for Nushell
+RUN /usr/local/yazelix/bin/zoxide init nushell > /root/.config/nushell/zoxide.nu
+
+# Generate Starship init for Nushell  
+RUN /usr/local/yazelix/bin/starship init nu > /root/.config/nushell/starship.nu
+
+# Set working directory
+WORKDIR /workspace
+
+# Verify installations
+RUN hx --version && \
+    zellij --version && \
+    yazi --version && \
+    nu --version && \
+    starship --version && \
+    zoxide --version && \
+    fzf --version && \
+    rg --version && \
+    fd --version && \
+    bat --version && \
+    eza --version && \
+    lazygit --version
+
+# Default command
+CMD ["/bin/bash"]

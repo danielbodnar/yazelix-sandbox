@@ -3,6 +3,8 @@
  *
  * This worker provides an API for running Yazelix (a terminal IDE combining
  * Yazi, Zellij, and Helix) in an isolated Cloudflare Sandbox environment.
+ *
+ * Updated to work without Nix - all tools are installed directly in the container.
  */
 
 import { getSandbox, Sandbox } from "@cloudflare/sandbox";
@@ -12,9 +14,6 @@ export { Sandbox };
 interface Env {
   Sandbox: DurableObjectNamespace;
 }
-
-// Nix profile source command
-const NIX_SOURCE = "source /root/.nix-profile/etc/profile.d/nix.sh";
 
 // Allowed workspace base path for file operations
 const WORKSPACE_BASE = "/workspace";
@@ -80,6 +79,7 @@ export default {
             status: "ok",
             service: "yazelix-sandbox",
             version: "1.0.0",
+            runtime: "direct-install", // No longer using Nix
             endpoints: [
               "GET /health - Health check",
               "GET /status - Sandbox status and tools",
@@ -95,7 +95,7 @@ export default {
             ],
           });
 
-        // Get sandbox status and available tools
+        // Get sandbox status
         case "/status":
           return await handleStatus(sandbox);
 
@@ -163,23 +163,22 @@ export default {
 async function handleStatus(
   sandbox: ReturnType<typeof getSandbox>
 ): Promise<Response> {
-  // Check which tools are available (hx is the Helix binary name)
+  // Check which tools are available (binaries are in PATH)
   const toolChecks = await Promise.all([
-    sandbox.exec(`${NIX_SOURCE} && which hx || echo "not found"`),
-    sandbox.exec(`${NIX_SOURCE} && which yazi || echo "not found"`),
-    sandbox.exec(`${NIX_SOURCE} && which zellij || echo "not found"`),
-    sandbox.exec(`${NIX_SOURCE} && which nu || echo "not found"`),
-    sandbox.exec(`${NIX_SOURCE} && hx --version 2>/dev/null || echo "n/a"`),
-    sandbox.exec(`${NIX_SOURCE} && yazi --version 2>/dev/null || echo "n/a"`),
-    sandbox.exec(
-      `${NIX_SOURCE} && zellij --version 2>/dev/null || echo "n/a"`
-    ),
-    sandbox.exec(`${NIX_SOURCE} && nu --version 2>/dev/null || echo "n/a"`),
+    sandbox.exec("which hx || echo 'not found'"),
+    sandbox.exec("which yazi || echo 'not found'"),
+    sandbox.exec("which zellij || echo 'not found'"),
+    sandbox.exec("which nu || echo 'not found'"),
+    sandbox.exec("hx --version 2>/dev/null || echo 'n/a'"),
+    sandbox.exec("yazi --version 2>/dev/null || echo 'n/a'"),
+    sandbox.exec("zellij --version 2>/dev/null || echo 'n/a'"),
+    sandbox.exec("nu --version 2>/dev/null || echo 'n/a'"),
     sandbox.exec("ls -la /workspace"),
   ]);
 
   return jsonResponse({
     status: "running",
+    runtime: "direct-install",
     tools: {
       helix: {
         path: toolChecks[0].stdout.trim(),
@@ -206,19 +205,24 @@ async function handleStatus(
 async function handleSetup(
   sandbox: ReturnType<typeof getSandbox>
 ): Promise<Response> {
-  const steps: Array<{ step: string; result: { success: boolean; output: string } }> = [];
+  const steps: Array<{
+    step: string;
+    result: { success: boolean; output: string };
+  }> = [];
 
-  // Step 1: Create config directories
+  // Step 1: Create workspace directories
   const mkdirResult = await sandbox.exec(
     "mkdir -p /workspace/yazelix/configs /workspace/project"
   );
   steps.push({
     step: "create_directories",
-    result: { success: mkdirResult.exitCode === 0, output: mkdirResult.stdout },
+    result: {
+      success: mkdirResult.exitCode === 0,
+      output: mkdirResult.stdout || "Directories created",
+    },
   });
 
   // Step 2: Clone Yazelix repository (configs only)
-  // Check if already cloned first
   const checkExistsResult = await sandbox.exec(
     "test -d /workspace/yazelix/repo/.git && echo 'exists' || echo 'not_exists'"
   );
@@ -258,106 +262,16 @@ async function handleSetup(
     }
   }
 
-  // Step 3: Setup Helix config
-  const helixConfigResult = await sandbox.exec(`
-    mkdir -p ~/.config/helix &&
-    cat > ~/.config/helix/config.toml << 'EOF'
-theme = "catppuccin_mocha"
-
-[editor]
-line-number = "relative"
-mouse = true
-cursorline = true
-auto-format = true
-bufferline = "multiple"
-color-modes = true
-
-[editor.cursor-shape]
-insert = "bar"
-normal = "block"
-select = "underline"
-
-[editor.lsp]
-display-messages = true
-display-inlay-hints = true
-
-[editor.file-picker]
-hidden = false
-
-[keys.normal]
-C-s = ":w"
-C-q = ":q"
-EOF
-  `);
-  steps.push({
-    step: "setup_helix_config",
-    result: {
-      success: helixConfigResult.exitCode === 0,
-      output: "Helix config created",
-    },
-  });
-
-  // Step 4: Setup Yazi config
-  const yaziConfigResult = await sandbox.exec(`
-    mkdir -p ~/.config/yazi &&
-    cat > ~/.config/yazi/yazi.toml << 'EOF'
-[manager]
-show_hidden = true
-sort_by = "natural"
-sort_sensitive = false
-sort_reverse = false
-sort_dir_first = true
-linemode = "size"
-show_symlink = true
-
-[preview]
-tab_size = 2
-max_width = 600
-max_height = 900
-
-[opener]
-edit = [
-  { run = 'helix "$@"', block = true, for = "unix" },
-]
-EOF
-  `);
-  steps.push({
-    step: "setup_yazi_config",
-    result: {
-      success: yaziConfigResult.exitCode === 0,
-      output: "Yazi config created",
-    },
-  });
-
-  // Step 5: Setup Zellij config
-  const zellijConfigResult = await sandbox.exec(`
-    mkdir -p ~/.config/zellij &&
-    cat > ~/.config/zellij/config.kdl << 'EOF'
-theme "catppuccin-mocha"
-default_shell "nu"
-pane_frames true
-simplified_ui false
-default_layout "compact"
-mouse_mode true
-scroll_buffer_size 10000
-copy_on_select true
-EOF
-  `);
-  steps.push({
-    step: "setup_zellij_config",
-    result: {
-      success: zellijConfigResult.exitCode === 0,
-      output: "Zellij config created",
-    },
-  });
-
-  // Step 6: Verify setup (hx is the Helix binary name)
+  // Step 3: Verify setup - tools are pre-installed in the container
   const verifyResult = await sandbox.exec(
-    `${NIX_SOURCE} && hx --version && yazi --version && zellij --version && nu --version`
+    "hx --version && yazi --version && zellij --version && nu --version"
   );
   steps.push({
     step: "verify_tools",
-    result: { success: verifyResult.exitCode === 0, output: verifyResult.stdout },
+    result: {
+      success: verifyResult.exitCode === 0,
+      output: verifyResult.stdout,
+    },
   });
 
   return jsonResponse({
@@ -378,7 +292,7 @@ async function handleExec(
     return jsonResponse({ error: "Missing 'command' in request body" }, 400);
   }
 
-  const fullCommand = `${NIX_SOURCE} && cd ${cwd} && ${command}`;
+  const fullCommand = `cd ${cwd} && ${command}`;
   const result = await sandbox.exec(fullCommand);
 
   return jsonResponse({
@@ -404,27 +318,30 @@ async function handleHelix(
   const { action, file, content } = body;
 
   switch (action) {
-    case "version":
-      const versionResult = await sandbox.exec(`${NIX_SOURCE} && hx --version`);
+    case "version": {
+      const versionResult = await sandbox.exec("hx --version");
       return jsonResponse({ version: versionResult.stdout.trim() });
+    }
 
-    case "health":
-      const healthResult = await sandbox.exec(`${NIX_SOURCE} && hx --health`);
+    case "health": {
+      const healthResult = await sandbox.exec("hx --health");
       return jsonResponse({
         health: healthResult.stdout,
         success: healthResult.exitCode === 0,
       });
+    }
 
-    case "grammar":
+    case "grammar": {
       const grammarResult = await sandbox.exec(
-        `${NIX_SOURCE} && hx --grammar fetch && hx --grammar build`
+        "hx --grammar fetch && hx --grammar build"
       );
       return jsonResponse({
         output: grammarResult.stdout,
         success: grammarResult.exitCode === 0,
       });
+    }
 
-    case "open":
+    case "open": {
       if (!file) {
         return jsonResponse({ error: "Missing 'file' parameter" }, 400);
       }
@@ -432,26 +349,36 @@ async function handleHelix(
       if (!isPathSafe(file)) {
         return jsonResponse({ error: "Path must be within /workspace" }, 400);
       }
-      // Use proper file existence check instead of helix --health
       const openResult = await sandbox.exec(
         `test -f ${shellEscape(file)} && echo "exists" || echo "not_found"`
       );
       const fileExists = openResult.stdout.trim() === "exists";
       return jsonResponse({
         file,
-        message: fileExists ? "File exists and ready for editing" : "File does not exist",
+        message: fileExists
+          ? "File exists and ready for editing"
+          : "File does not exist",
         exists: fileExists,
       });
+    }
 
-    case "edit":
+    case "edit": {
       if (!file || content === undefined) {
         return jsonResponse(
           { error: "Missing 'file' or 'content' parameter" },
           400
         );
       }
+      // Validate path is within workspace
+      if (!isPathSafe(file)) {
+        return jsonResponse(
+          { error: "Path must be within /workspace and cannot contain path traversal" },
+          400
+        );
+      }
       await sandbox.writeFile(file, content);
       return jsonResponse({ file, message: "File written successfully" });
+    }
 
     default:
       return jsonResponse(
@@ -473,27 +400,45 @@ async function handleYazi(
   const { action, path = "/workspace" } = body;
 
   switch (action) {
-    case "version":
-      const versionResult = await sandbox.exec(`${NIX_SOURCE} && yazi --version`);
+    case "version": {
+      const versionResult = await sandbox.exec("yazi --version");
       return jsonResponse({ version: versionResult.stdout.trim() });
+    }
 
-    case "list":
-      const listResult = await sandbox.exec(`ls -la ${path}`);
+    case "list": {
+      // Validate path is within workspace
+      if (!isPathSafe(path)) {
+        return jsonResponse(
+          { error: "Path must be within /workspace and cannot contain path traversal" },
+          400
+        );
+      }
+      const listResult = await sandbox.exec(`ls -la ${shellEscape(path)}`);
       return jsonResponse({
         path,
         contents: listResult.stdout,
         success: listResult.exitCode === 0,
       });
+    }
 
-    case "tree":
+    case "tree": {
+      // Validate path is within workspace
+      if (!isPathSafe(path)) {
+        return jsonResponse(
+          { error: "Path must be within /workspace and cannot contain path traversal" },
+          400
+        );
+      }
+      const escapedPath = shellEscape(path);
       const treeResult = await sandbox.exec(
-        `${NIX_SOURCE} && fd --type f --max-depth 3 . ${path} 2>/dev/null || find ${path} -maxdepth 3 -type f`
+        `fd --type f --max-depth 3 . ${escapedPath} 2>/dev/null || find ${escapedPath} -maxdepth 3 -type f`
       );
       return jsonResponse({
         path,
         tree: treeResult.stdout,
         success: treeResult.exitCode === 0,
       });
+    }
 
     default:
       return jsonResponse(
@@ -514,24 +459,27 @@ async function handleZellij(
   const { action } = body;
 
   switch (action) {
-    case "version":
-      const versionResult = await sandbox.exec(`${NIX_SOURCE} && zellij --version`);
+    case "version": {
+      const versionResult = await sandbox.exec("zellij --version");
       return jsonResponse({ version: versionResult.stdout.trim() });
+    }
 
-    case "list-sessions":
-      const listResult = await sandbox.exec(`${NIX_SOURCE} && zellij list-sessions 2>&1`);
+    case "list-sessions": {
+      const listResult = await sandbox.exec("zellij list-sessions 2>&1");
       return jsonResponse({
         sessions: listResult.stdout,
         success: listResult.exitCode === 0,
       });
+    }
 
-    case "layouts":
+    case "layouts": {
       const layoutsResult = await sandbox.exec(
         "ls ~/.config/zellij/layouts/ 2>/dev/null || echo 'No custom layouts'"
       );
       return jsonResponse({ layouts: layoutsResult.stdout });
+    }
 
-    case "setup-layout":
+    case "setup-layout": {
       // Create a Yazelix-style layout
       const setupResult = await sandbox.exec(`
         mkdir -p ~/.config/zellij/layouts &&
@@ -542,7 +490,7 @@ layout {
             command "yazi"
         }
         pane size="80%" {
-            command "helix"
+            command "hx"
             args "."
         }
     }
@@ -553,6 +501,7 @@ EOF
         message: "Yazelix layout created",
         success: setupResult.exitCode === 0,
       });
+    }
 
     default:
       return jsonResponse(
@@ -573,9 +522,18 @@ async function handleListFiles(
   const path = url.searchParams.get("path") || "/workspace";
   const recursive = url.searchParams.get("recursive") === "true";
 
+  // Validate path is within workspace
+  if (!isPathSafe(path)) {
+    return jsonResponse(
+      { error: "Path must be within /workspace and cannot contain path traversal" },
+      400
+    );
+  }
+
+  const escapedPath = shellEscape(path);
   const command = recursive
-    ? `${NIX_SOURCE} && fd --type f . ${path} 2>/dev/null || find ${path} -type f`
-    : `ls -la ${path}`;
+    ? `fd --type f . ${escapedPath} 2>/dev/null || find ${escapedPath} -type f`
+    : `ls -la ${escapedPath}`;
 
   const result = await sandbox.exec(command);
 
@@ -596,6 +554,14 @@ async function handleReadFile(
 
   if (!path) {
     return jsonResponse({ error: "Missing 'path' query parameter" }, 400);
+  }
+
+  // Validate path is within workspace
+  if (!isPathSafe(path)) {
+    return jsonResponse(
+      { error: "Path must be within /workspace and cannot contain path traversal" },
+      400
+    );
   }
 
   try {
@@ -622,6 +588,14 @@ async function handleWriteFile(
     );
   }
 
+  // Validate path is within workspace
+  if (!isPathSafe(path)) {
+    return jsonResponse(
+      { error: "Path must be within /workspace and cannot contain path traversal" },
+      400
+    );
+  }
+
   await sandbox.writeFile(path, content);
 
   return jsonResponse({ path, message: "File written successfully" });
@@ -641,7 +615,9 @@ async function handleDeleteFile(
   // Validate path is within workspace to prevent path traversal attacks
   if (!isPathSafe(path)) {
     return jsonResponse(
-      { error: "Path must be within /workspace and cannot contain path traversal" },
+      {
+        error: "Path must be within /workspace and cannot contain path traversal",
+      },
       400
     );
   }
@@ -674,6 +650,7 @@ function methodNotAllowed(allowed: string): Response {
     headers: {
       "Content-Type": "application/json",
       Allow: allowed,
+      ...CORS_HEADERS,
     },
   });
 }
