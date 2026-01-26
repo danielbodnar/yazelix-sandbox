@@ -1,0 +1,24 @@
+{
+  "name": "yazelix-sandbox",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Yazelix terminal IDE running in Cloudflare Sandbox",
+  "scripts": {
+    "dev": "wrangler dev",
+    "start": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "cf-typegen": "wrangler types",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@cloudflare/sandbox": "latest"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250523.0",
+    "@types/node": "^22.15.21",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.50.0"
+  },
+  "license": "MIT"
+}
