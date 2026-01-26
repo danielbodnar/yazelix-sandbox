@@ -1,0 +1,62 @@
+# Helix Editor Configuration for Yazelix Sandbox
+# https://docs.helix-editor.com/configuration.html
+
+theme = "catppuccin_mocha"
+
+[editor]
+line-number = "relative"
+mouse = true
+cursorline = true
+auto-format = true
+bufferline = "multiple"
+color-modes = true
+idle-timeout = 50
+completion-trigger-len = 1
+true-color = true
+rulers = [80, 120]
+
+[editor.statusline]
+left = ["mode", "spinner", "file-name", "file-modification-indicator"]
+center = []
+right = ["diagnostics", "selections", "register", "position", "file-encoding"]
+
+[editor.cursor-shape]
+insert = "bar"
+normal = "block"
+select = "underline"
+
+[editor.lsp]
+display-messages = true
+display-inlay-hints = true
+auto-signature-help = true
+
+[editor.file-picker]
+hidden = false
+git-ignore = true
+
+[editor.indent-guides]
+render = true
+character = "│"
+
+[editor.soft-wrap]
+enable = true
+
+[editor.whitespace.render]
+space = "none"
+tab = "all"
+newline = "none"
+
+[keys.normal]
+C-s = ":w"
+C-q = ":q"
+C-a = "select_all"
+C-c = ":clipboard-yank"
+C-v = ":clipboard-paste-after"
+space.w = ":w"
+space.q = ":q"
+space.f = "file_picker"
+space.b = "buffer_picker"
+space.g = ":sh lazygit"
+
+[keys.insert]
+C-s = ["normal_mode", ":w"]

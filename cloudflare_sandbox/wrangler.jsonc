@@ -38,15 +38,14 @@
     }
   ],
 
-  // Optional: R2 bucket for persistent storage across sandbox lifecycles
-  // Uncomment to enable persistent workspace data
-  // "r2_buckets": [
-  //   {
-  //     "binding": "WORKSPACE_BUCKET",
-  //     "bucket_name": "yazelix-workspaces",
-  //     "preview_bucket_name": "yazelix-workspaces-dev"
-  //   }
-  // ],
+  // R2 bucket for persistent storage across sandbox lifecycles
+  "r2_buckets": [
+    {
+      "binding": "WORKSPACE_BUCKET",
+      "bucket_name": "yazelix-workspaces",
+      "preview_bucket_name": "yazelix-workspaces-dev"
+    }
+  ],
 
   // Environment variables for container configuration
   "vars": {

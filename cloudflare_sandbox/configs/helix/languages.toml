@@ -1,0 +1,65 @@
+# Helix Language Configuration
+# https://docs.helix-editor.com/languages.html
+
+# TypeScript/JavaScript
+[[language]]
+name = "typescript"
+auto-format = true
+formatter = { command = "prettier", args = ["--parser", "typescript"] }
+
+[[language]]
+name = "javascript"
+auto-format = true
+formatter = { command = "prettier", args = ["--parser", "babel"] }
+
+[[language]]
+name = "json"
+auto-format = true
+formatter = { command = "prettier", args = ["--parser", "json"] }
+
+# Rust
+[[language]]
+name = "rust"
+auto-format = true
+
+# Python
+[[language]]
+name = "python"
+auto-format = true
+formatter = { command = "black", args = ["-"] }
+
+# Go
+[[language]]
+name = "go"
+auto-format = true
+
+# Nushell
+[[language]]
+name = "nu"
+auto-format = false
+
+# TOML
+[[language]]
+name = "toml"
+auto-format = true
+
+# YAML
+[[language]]
+name = "yaml"
+auto-format = true
+
+# Markdown
+[[language]]
+name = "markdown"
+auto-format = false
+soft-wrap.enable = true
+
+# Shell
+[[language]]
+name = "bash"
+auto-format = false
+
+# Nix
+[[language]]
+name = "nix"
+auto-format = true

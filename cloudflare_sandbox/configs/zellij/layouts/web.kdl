@@ -1,0 +1,53 @@
+// Web Session Layout - Optimized for browser-based terminal access
+// Simplified layout for web clients with larger fonts and cleaner UI
+
+layout {
+  // Status bar at top
+  default_tab_template {
+    pane size=1 borderless=true {
+      plugin location="file:/usr/local/yazelix/share/zjstatus/zjstatus.wasm" {
+        format_left   "{mode}#[fg=#89b4fa,bg=#1e1e2e] {session}"
+        format_center "{tabs}"
+        format_right  "#[fg=#cdd6f4,bg=#1e1e2e] {datetime} #[fg=#89b4fa]󰖟 WEB"
+        format_space  "#[bg=#1e1e2e]"
+
+        border_enabled  "false"
+
+        mode_normal   "#[fg=#a6e3a1,bg=#1e1e2e,bold]  NORMAL"
+        mode_locked   "#[fg=#f38ba8,bg=#1e1e2e,bold]  LOCKED"
+
+        tab_normal    "#[fg=#6c7086,bg=#1e1e2e] {index}:{name}"
+        tab_active    "#[fg=#89b4fa,bg=#1e1e2e,bold] {index}:{name}"
+        tab_separator "#[fg=#45475a,bg=#1e1e2e]  "
+
+        datetime          "#[fg=#bac2de,bg=#1e1e2e]{format}"
+        datetime_format   "%H:%M"
+        datetime_timezone "UTC"
+      }
+    }
+    children
+  }
+
+  // Single pane workspace - clean for web access
+  tab name="Workspace" focus=true {
+    pane split_direction="vertical" {
+      // File browser (narrower for web)
+      pane size="15%" name="files" borderless=false {
+        command "yazi"
+        args "/workspace"
+      }
+      // Main editor area (larger for web)
+      pane size="85%" name="editor" focus=true borderless=false {
+        command "hx"
+        args "."
+      }
+    }
+  }
+
+  // Terminal tab
+  tab name="Terminal" {
+    pane name="shell" {
+      command "nu"
+    }
+  }
+}
