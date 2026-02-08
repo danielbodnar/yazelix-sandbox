@@ -2,6 +2,7 @@
 # Yazi integration utilities for Yazelix
 
 use ../utils/logging.nu log_to_file
+use ../utils/config_parser.nu parse_yazelix_config
 use zellij.nu [get_running_command, is_hx_running, is_nvim_running, open_in_existing_helix, open_in_existing_neovim, open_new_helix_pane, open_new_neovim_pane, find_and_focus_helix_pane, move_focused_pane_to_top, get_focused_pane_name, get_tab_name]
 
 # Check if the editor command is Helix (supports both simple names and full paths)
@@ -14,6 +15,11 @@ def is_helix_editor [editor: string] {
 # This allows yazelix to work with "nvim", "neovim", "/nix/store/.../bin/nvim", "/usr/bin/nvim", etc.
 def is_neovim_editor [editor: string] {
     ($editor | str ends-with "/nvim") or ($editor == "nvim") or ($editor | str ends-with "/neovim") or ($editor == "neovim")
+}
+
+def is_sidebar_enabled [] {
+    let config = parse_yazelix_config
+    ($config.enable_sidebar? | default true)
 }
 
 # Sync yazi's directory to match the opened file's location
@@ -43,7 +49,7 @@ export def reveal_in_yazi [buffer_name: string] {
     log_to_file "reveal_in_yazi.log" $"reveal_in_yazi called with buffer_name: '($buffer_name)'"
 
     # Check if sidebar mode is enabled
-    let sidebar_enabled = ($env.YAZELIX_ENABLE_SIDEBAR? | default "true") == "true"
+    let sidebar_enabled = is_sidebar_enabled
     if (not $sidebar_enabled) {
         let friendly_msg = "📂 Reveal in Yazi (Alt+y) only works in sidebar mode. You're currently using no-sidebar mode."
         let tip_msg = "💡 Tip: Use Ctrl+y for file picking in no-sidebar mode, or enable sidebar mode in yazelix.toml"
@@ -145,7 +151,7 @@ def open_with_editor_integration [
     sync_yazi_to_directory $file_path $yazi_id $log_file
 
     # In no-sidebar mode, we leave the Yazi pane open - no need to close it
-    let sidebar_enabled = ($env.YAZELIX_ENABLE_SIDEBAR? | default "true") == "true"
+    let sidebar_enabled = is_sidebar_enabled
     if (not $sidebar_enabled) {
         log_to_file $log_file $"No-sidebar mode: leaving Yazi pane open, no close operation needed"
     }
@@ -221,7 +227,7 @@ export def open_file_with_editor [file_path: path] {
     log_to_file "open_editor.log" $"Using editor: ($editor)"
 
     # Check if sidebar is enabled
-    let sidebar_enabled = ($env.YAZELIX_ENABLE_SIDEBAR? | default "true") == "true"
+    let sidebar_enabled = is_sidebar_enabled
     log_to_file "open_editor.log" $"Sidebar enabled: ($sidebar_enabled)"
 
     # Capture YAZI_ID from Yazi's pane
