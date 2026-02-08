@@ -89,7 +89,7 @@ export def "yzx menu" [
         }
 
         let wrapper = $"($env.HOME)/.config/yazelix/configs/zellij/scripts/yzx_menu_popup.nu"
-        zellij run --name yzx_menu --floating --close-on-exit --width 90% --height 90% --x 5% --y 5% -- nu $wrapper
+        zellij run --name yzx_menu --floating --close-on-exit --width 70% --height 70% --x 15% --y 15% -- nu $wrapper
         return
     }
 
