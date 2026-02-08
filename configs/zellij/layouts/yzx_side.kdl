@@ -13,7 +13,7 @@ layout {
 
      default_tab_template {
          pane size=1 borderless=true {
-            __YAZELIX_ZJSTATUS_DEFAULT_TAB_TEMPLATE__
+            __YAZELIX_ZJSTATUS_TAB_TEMPLATE__
          }
          pane split_direction="vertical" {
              pane name="sidebar" {

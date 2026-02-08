@@ -4,7 +4,6 @@
 const widget_tray_placeholder = "__YAZELIX_WIDGET_TRAY__"
 const static_fragment_specs = [
     {placeholder: "__YAZELIX_ZJSTATUS_TAB_TEMPLATE__", file: "fragments/zjstatus_tab_template.kdl"}
-    {placeholder: "__YAZELIX_ZJSTATUS_DEFAULT_TAB_TEMPLATE__", file: "fragments/zjstatus_default_tab_template.kdl"}
     {placeholder: "__YAZELIX_KEYBINDS_COMMON__", file: "fragments/keybinds_common.kdl"}
     {placeholder: "__YAZELIX_SWAP_SIDEBAR_OPEN__", file: "fragments/swap_sidebar_open.kdl"}
     {placeholder: "__YAZELIX_SWAP_SIDEBAR_CLOSED__", file: "fragments/swap_sidebar_closed.kdl"}
