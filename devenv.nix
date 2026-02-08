@@ -192,6 +192,33 @@ let
         if [ "$MODE" = "user" ] || [ "$MODE" = "auto" ]; then
           if [ -f "$USER_CONF" ]; then CONF="$USER_CONF"; fi
         fi
+        # On Wayland, stale IM variables (e.g. GTK_IM_MODULE=ibus without daemon)
+        # can break dead-key/compose input in GTK terminals.
+        if [ -n "''${WAYLAND_DISPLAY:-}" ]; then
+          use_simple_im=0
+          if [ -z "''${GTK_IM_MODULE:-}" ]; then
+            use_simple_im=1
+          fi
+          if [ "''${GTK_IM_MODULE:-}" = "ibus" ]; then
+            if ! command -v pgrep >/dev/null 2>&1 || ! pgrep -x ibus-daemon >/dev/null 2>&1; then
+              use_simple_im=1
+            fi
+          fi
+          case "''${GTK_IM_MODULE:-}" in
+            fcitx|fcitx5)
+              if ! command -v pgrep >/dev/null 2>&1 || { ! pgrep -x fcitx5 >/dev/null 2>&1 && ! pgrep -x fcitx >/dev/null 2>&1; }; then
+                use_simple_im=1
+              fi
+              ;;
+          esac
+          if [ "$use_simple_im" -eq 1 ]; then
+            export GTK_IM_MODULE="simple"
+            unset QT_IM_MODULE XMODIFIERS
+          fi
+        elif [ -z "''${GTK_IM_MODULE:-}" ]; then
+          # X11 fallback when no IM is configured.
+          export GTK_IM_MODULE="simple"
+        fi
         exec ${
           lib.optionalString (nixglIntel != null) "${nixglIntel}/bin/nixGLIntel "
         }${pkgs.ghostty}/bin/ghostty \
