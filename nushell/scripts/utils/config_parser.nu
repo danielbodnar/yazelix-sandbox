@@ -50,6 +50,7 @@ export def parse_yazelix_config [] {
         extra_shells: ($raw_config.shell?.extra_shells? | default []),
         enable_atuin: ($raw_config.shell?.enable_atuin? | default false),
         helix_mode: ($raw_config.helix?.mode? | default "release"),
+        enable_sidebar: ($raw_config.editor?.enable_sidebar? | default true),
         disable_zellij_tips: ($raw_config.zellij?.disable_tips? | default true | into string),
         zellij_rounded_corners: ($raw_config.zellij?.rounded_corners? | default true | into string),
         yazi_plugins: ($raw_config.yazi?.plugins? | default ["git"]),
