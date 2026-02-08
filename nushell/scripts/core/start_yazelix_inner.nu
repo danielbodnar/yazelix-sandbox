@@ -15,12 +15,6 @@ def main [cwd_override?: string, layout_override?: string] {
     let yazelix_dir = ($env.HOME | path join ".config" "yazelix")
     let quiet_mode = ($env.YAZELIX_ENV_ONLY? == "true")
 
-    # Keep runtime behavior aligned with config regardless of inherited env.
-    $env.YAZELIX_ENABLE_SIDEBAR = if $sidebar_enabled { "true" } else { "false" }
-    if not (($env.YAZELIX_SWEEP_TEST_ID? | is-not-empty) and ($env.ZELLIJ_DEFAULT_LAYOUT? | is-not-empty)) {
-        $env.ZELLIJ_DEFAULT_LAYOUT = $configured_layout
-    }
-
     let log_dir = ($YAZELIX_LOGS_DIR | str replace "~" $env.HOME)
     mkdir $log_dir
     let colors = get_yazelix_colors
