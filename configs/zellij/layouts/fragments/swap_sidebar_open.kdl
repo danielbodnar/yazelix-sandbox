@@ -1,0 +1,4 @@
+pane name="sidebar" {
+    command "yazi"
+    size "20%"
+}
