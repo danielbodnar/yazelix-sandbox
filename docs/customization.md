@@ -8,10 +8,10 @@ Yazelix is highly customizable! Here are the main ways you can tailor your exper
     - **Cursor trails** *(default: `random`)*: Set a single preset: `cursor_trail = "blaze" | "snow" | "cosmic" | "ocean" | "forest" | "sunset" | "neon" | "party" | "eclipse" | "dusk" | "orchid" | "reef" | "inferno" | "random" | "none"` (`random` rotates between colorful presets, excluding `none` and `party`)
     - **Transparency**: Configure `transparency = "none"`, `"low"`, `"medium"`, or `"high"`
     - **No manual copying required** - auto-generated when launching yazelix
-  - **System terminals** (user-installed): Static example configs in `configs/terminal_emulators/`
-    - Copy examples manually: `cp ~/.config/yazelix/configs/terminal_emulators/wezterm/.wezterm.lua ~/.wezterm.lua`
-    - No dynamic yazelix settings integration (transparency, cursor trails)
-    - Full customization freedom but no automated updates
+  - **Reference configs** (generated snapshot): `configs/terminal_emulators/`
+    - Refresh snapshots: `yzx dev sync_terminal_configs` (uses `yazelix_default.toml`)
+    - Print a fresh config: `yzx gen_config wezterm`
+    - Snapshots match the generated configs under `~/.local/share/yazelix/configs/terminal_emulators/`
 - **Zellij Configuration**: Git-conflict-free three-layer configuration system:
   - **Quick start**: 
     ```bash

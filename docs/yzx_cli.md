@@ -45,6 +45,10 @@ Load Yazelix environment without UI
 Run a single command in the Yazelix environment and exit
 - Quote args that start with `-` to avoid flag parsing (e.g., `"-lc"`)
 
+### `yzx gen_config <terminal>`
+Print a terminal emulator config generated from `yazelix_default.toml`
+- Example: `yzx gen_config alacritty`
+
 ### `yzx restart`
 Restart Yazelix (handles persistent sessions)
 
@@ -61,6 +65,7 @@ Manage Yazelix updates
 Maintainer-only updates:
 - `yzx dev update_lock`: Refresh `devenv.lock` via `devenv update` (`--yes` skips prompt, `--verbose` shows command)
 - `yzx dev update_nix`: Upgrade Determinate Nix via `determinate-nixd` (`--yes` skips prompt, `--verbose` shows command; sudo required; only works if Determinate Nix is installed)
+- `yzx dev sync_terminal_configs`: Regenerate terminal configs and sync snapshots into `configs/terminal_emulators/`
 
 ### `yzx gc [deep [PERIOD] | deeper]`
 Garbage collection for Nix store

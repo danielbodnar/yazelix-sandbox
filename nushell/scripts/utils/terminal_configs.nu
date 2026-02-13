@@ -155,14 +155,14 @@ export def generate_alacritty_config [] {
     let config = parse_yazelix_config
     $"# Alacritty configuration for Yazelix
 
+[general]
 import = []
 
 [env]
 TERM = \"xterm-256color\"
 
-[shell]
-program = \"sh\"
-args = ($SHELL_ARGS_STRING)
+[terminal]
+shell = { program = \"sh\", args = ($SHELL_ARGS_STRING) }
 
 [window]
 decorations = \"None\"

@@ -3,11 +3,11 @@
 
 ## 1.A: Terminal Auto-Launch 
 - **Setup**: Copy terminal config:
-  - **WezTerm**: `cp ~/.config/yazelix/configs/terminal_emulators/wezterm/.wezterm.lua ~/.wezterm.lua`
-  - **Ghostty**: `cp ~/.config/yazelix/configs/terminal_emulators/ghostty/config ~/.config/ghostty/config`
-  - **Kitty**: `cp ~/.config/yazelix/configs/terminal_emulators/kitty/kitty.conf ~/.config/kitty/kitty.conf`
-  - **Alacritty**: `cp ~/.config/yazelix/configs/terminal_emulators/alacritty/alacritty.toml ~/.config/alacritty/alacritty.toml`
-  - **Foot**: `cp ~/.config/yazelix/configs/terminal_emulators/foot/foot.ini ~/.config/foot/foot.ini`
+  - **WezTerm**: `yzx gen_config wezterm > ~/.wezterm.lua`
+  - **Ghostty**: `yzx gen_config ghostty > ~/.config/ghostty/config`
+  - **Kitty**: `yzx gen_config kitty > ~/.config/kitty/kitty.conf`
+  - **Alacritty**: `yzx gen_config alacritty > ~/.config/alacritty/alacritty.toml`
+  - **Foot**: `yzx gen_config foot > ~/.config/foot/foot.ini`
 - **Launch**: Open your terminal and it automatically executes the Yazelix startup script
 
 ## 1.B: Terminal Commands  
