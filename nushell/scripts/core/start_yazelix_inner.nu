@@ -58,8 +58,28 @@ def main [cwd_override?: string, layout_override?: string] {
         # Check if session already exists
         let existing_sessions = (do { ^zellij list-sessions } | complete)
         let session_exists = if $existing_sessions.exit_code == 0 {
-            let sessions = ($existing_sessions.stdout | lines | where {|s| $s | str contains $config.session_name})
-            ($sessions | is-not-empty)
+            let sessions = (
+                $existing_sessions.stdout
+                | lines
+                | each {|line|
+                    let clean_line = (
+                        $line
+                        | str replace -ra '\u001b\[[0-9;]*[A-Za-z]' ''
+                        | str replace -r '^>\s*' ''
+                        | str trim
+                    )
+                    if ($clean_line | is-empty) {
+                        null
+                    } else {
+                        $clean_line
+                        | split row " "
+                        | where {|token| $token != ""}
+                        | first
+                    }
+                }
+                | where ($it | is-not-empty)
+            )
+            ($sessions | any {|name| $name == $config.session_name})
         } else {
             false
         }
