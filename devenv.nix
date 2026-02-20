@@ -36,6 +36,7 @@ let
     "goose-cli"
     "openclaw"
     "opencode"
+    "zeroclaw"
   ];
   nixglIntel =
     if nixglPackages != null && nixglPackages ? nixGLIntel then nixglPackages.nixGLIntel else null;

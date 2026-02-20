@@ -305,6 +305,7 @@ ai_tools = [
   # Utilities
   "beads",          # Conversation bead manager
   "openclaw",       # OpenClaw (formerly moltbot/clawdbot)
+  "zeroclaw",      # ZeroClaw
 ]
 
 # Unfree packages from nixpkgs (enables NIXPKGS_ALLOW_UNFREE=1)

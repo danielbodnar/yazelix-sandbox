@@ -364,6 +364,7 @@ in
           "ccusage-opencode"
           "beads"
           "openclaw"
+          "zeroclaw"
         ];
         # unfree = []; # For unfree nixpkgs packages
         config = [
