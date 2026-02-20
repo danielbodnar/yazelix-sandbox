@@ -305,6 +305,7 @@ ai_tools = [
   # Utilities
   "beads",          # Conversation bead manager
   "openclaw",       # OpenClaw (formerly moltbot/clawdbot)
+  "picoclaw",       # PicoClaw
   "zeroclaw",      # ZeroClaw
 ]
 

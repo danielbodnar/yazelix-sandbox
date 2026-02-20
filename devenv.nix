@@ -35,6 +35,7 @@ let
     "gemini-cli"
     "goose-cli"
     "openclaw"
+    "picoclaw"
     "opencode"
     "zeroclaw"
   ];

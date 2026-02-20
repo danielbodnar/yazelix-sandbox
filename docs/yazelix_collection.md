@@ -191,6 +191,7 @@ AI support tools: analytics, code review, and utilities (from llm-agents.nix).
 - ccusage-amp, ccusage-codex, ccusage-opencode — Usage trackers for other agents
 - [beads](https://github.com/lemonmade/beads) — Conversation bead manager
 - [openclaw](https://github.com/openclaw/openclaw) — OpenClaw (formerly moltbot/clawdbot)
+- [picoclaw](https://github.com/picoclaw/picoclaw) — PicoClaw
 - [zeroclaw](https://github.com/zeroclaw-labs/zeroclaw) — ZeroClaw
 
 **Usage**: Enable packs in `yazelix.toml` by listing them in `packs.enabled` and defining them in `packs.declarations`, or add individual tools via `user_packages` for fine-grained control.
