@@ -442,7 +442,6 @@ let
     lazygit
     atuin
     carapace
-    markdown-oxide
   ];
 
   yaziExtensionsDeps = with pkgs; [

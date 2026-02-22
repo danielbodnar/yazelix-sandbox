@@ -33,7 +33,6 @@ Yazelix is built on the shoulders of giants. Here are the projects, tools, and p
 - [lazygit](https://github.com/jesseduffield/lazygit) — A simple terminal UI for git commands, making version control fast and intuitive. Yazelix includes lazygit for easy git management.
 - [atuin](https://github.com/atuinsh/atuin) — A shell history manager with sync and search capabilities. Enhances command recall and productivity in Yazelix. 🔧 auto-configured
 - [carapace](https://github.com/rsteube/carapace-bin) — A cross-shell command-line completion engine. Improves tab completion in supported shells. 🔧 auto-configured
-- [markdown-oxide](https://oxide.md/index) — A personal knowledge management system (PKMS) that works with text editors through LSP. Included for advanced note-taking and documentation workflows.
 
 ## Yazi Extensions
 - [p7zip](https://github.com/p7zip-project/p7zip) — A port of the 7-Zip archiver. Enables archive extraction and compression in Yazi.
@@ -147,7 +146,7 @@ Complete toolchains you can declare:
 - [typst](https://typst.app/) — Modern document preparation system: a fast, markup-based alternative to LaTeX with a built-in compiler, formatter, and language server
 - [tinymist](https://github.com/Myriad-Dreamin/tinymist) — Full-featured Typst language server with LSP support (completions, diagnostics, hover, document export)
 - [pandoc](https://pandoc.org/) — Universal document converter supporting Markdown, LaTeX, HTML, Word, PDF, EPUB, and many more formats
-- [markdown-oxide](https://oxide.md/index) — Markdown PKM language server with LSP support for note links, completions, and knowledge graph navigation (also included in recommended deps)
+- [markdown-oxide](https://oxide.md/index) — Markdown PKM language server with LSP support for note links, completions, and knowledge graph navigation
 
 ### Nix Pack (`nix`)
 - [nil](https://github.com/oxalica/nil) — Nix language server for IDE features (LSP support for Helix, VSCode, etc.)
