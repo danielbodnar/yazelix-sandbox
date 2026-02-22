@@ -28,7 +28,6 @@ def build_sweep_config [
         shell: {
             default_shell: $shell
             extra_shells: []
-            enable_atuin: false
         }
         terminal: {
             terminals: ([$terminal "ghostty" "wezterm" "kitty" "alacritty" "foot"] | uniq)

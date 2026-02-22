@@ -89,7 +89,6 @@ let
 
     default_shell = rawConfig.shell.default_shell or "nu";
     extra_shells = rawConfig.shell.extra_shells or [ ];
-    enable_atuin = rawConfig.shell.enable_atuin or false;
 
     terminals = rawConfig.terminal.terminals or [ "ghostty" ];
     manage_terminals = rawConfig.terminal.manage_terminals or true;
@@ -121,7 +120,6 @@ let
   recommendedDepsEnabled = userConfig.recommended_deps or true;
   yaziExtensionsEnabled = userConfig.yazi_extensions or true;
   yaziMediaEnabled = userConfig.yazi_media or true;
-  atuinEnabled = userConfig.enable_atuin or false;
 
   defaultShell = userConfig.default_shell or "nu";
   extraShells = userConfig.extra_shells or [ ];
@@ -440,7 +438,6 @@ let
 
   recommendedDeps = with pkgs; [
     lazygit
-    atuin
     carapace
   ];
 

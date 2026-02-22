@@ -439,12 +439,6 @@ in
       description = "Pack declarations mapping names to nixpkgs package strings (supports dotted paths)";
     };
 
-    enable_atuin = mkOption {
-      type = types.bool;
-      default = false;
-      description = "Enable Atuin shell history integration (disabled by default).";
-    };
-
     user_packages = mkOption {
       type = types.listOf types.package;
       default = [ ];
@@ -512,7 +506,6 @@ in
             "[shell]"
             "default_shell = ${escapeString cfg.default_shell}"
             "extra_shells = ${listToToml cfg.extra_shells}"
-            "enable_atuin = ${boolToToml cfg.enable_atuin}"
             ""
             "[terminal]"
             "terminals = ${listToToml cfg.terminals}"

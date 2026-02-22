@@ -31,7 +31,7 @@ Yazelix is built on the shoulders of giants. Here are the projects, tools, and p
 
 ## Recommended Tools
 - [lazygit](https://github.com/jesseduffield/lazygit) — A simple terminal UI for git commands, making version control fast and intuitive. Yazelix includes lazygit for easy git management.
-- [atuin](https://github.com/atuinsh/atuin) — A shell history manager with sync and search capabilities. Enhances command recall and productivity in Yazelix. 🔧 auto-configured
+- [atuin](https://github.com/atuinsh/atuin) — A shell history manager with sync and search capabilities. Add via `user_packages = ["atuin"]` — Yazelix auto-configures it when detected.
 - [carapace](https://github.com/rsteube/carapace-bin) — A cross-shell command-line completion engine. Improves tab completion in supported shells. 🔧 auto-configured
 
 ## Yazi Extensions

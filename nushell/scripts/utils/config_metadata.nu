@@ -19,7 +19,6 @@ export const REBUILD_REQUIRED_KEYS = [
 
     # Shell packages
     "shell.extra_shells",
-    "shell.enable_atuin",
 
     # Terminal packages
     "terminal.terminals",
