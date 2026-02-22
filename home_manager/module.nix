@@ -429,6 +429,10 @@ in
           "detekt"
           "gradle"
         ];
+        typst = [
+          "typst"
+          "tinymist"
+        ];
       };
       description = "Pack declarations mapping names to nixpkgs package strings (supports dotted paths)";
     };

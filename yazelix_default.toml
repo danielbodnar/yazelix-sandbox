@@ -263,6 +263,7 @@ enabled = [
   # "rust_extra",
   # "nix",
   # "ts",
+  # "typst",
   # "go",
   # "go_extra",
   # "kotlin",
@@ -385,4 +386,9 @@ kotlin = [
   "ktlint", # Kotlin linter/formatter
   "detekt", # Kotlin static analysis
   "gradle", # Build tool for Kotlin/JVM
+]
+
+typst = [
+  "typst",    # Typst compiler, formatter, and language server
+  "tinymist", # Full-featured Typst language server (LSP)
 ]
