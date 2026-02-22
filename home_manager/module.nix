@@ -429,9 +429,11 @@ in
           "detekt"
           "gradle"
         ];
-        typst = [
+        writing = [
           "typst"
           "tinymist"
+          "pandoc"
+          "markdown-oxide"
         ];
       };
       description = "Pack declarations mapping names to nixpkgs package strings (supports dotted paths)";

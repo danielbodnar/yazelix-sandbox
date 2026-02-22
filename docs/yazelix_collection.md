@@ -143,9 +143,11 @@ Complete toolchains you can declare:
 - [detekt](https://github.com/detekt/detekt) — Static code analysis tool for code quality and smell detection
 - [gradle](https://gradle.org/) — Build automation tool for Kotlin/JVM projects
 
-### Typst Pack (`typst`)
+### Writing Pack (`writing`)
 - [typst](https://typst.app/) — Modern document preparation system: a fast, markup-based alternative to LaTeX with a built-in compiler, formatter, and language server
 - [tinymist](https://github.com/Myriad-Dreamin/tinymist) — Full-featured Typst language server with LSP support (completions, diagnostics, hover, document export)
+- [pandoc](https://pandoc.org/) — Universal document converter supporting Markdown, LaTeX, HTML, Word, PDF, EPUB, and many more formats
+- [markdown-oxide](https://oxide.md/index) — Markdown PKM language server with LSP support for note links, completions, and knowledge graph navigation (also included in recommended deps)
 
 ### Nix Pack (`nix`)
 - [nil](https://github.com/oxalica/nil) — Nix language server for IDE features (LSP support for Helix, VSCode, etc.)

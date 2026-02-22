@@ -263,7 +263,7 @@ enabled = [
   # "rust_extra",
   # "nix",
   # "ts",
-  # "typst",
+  # "writing",
   # "go",
   # "go_extra",
   # "kotlin",
@@ -388,7 +388,9 @@ kotlin = [
   "gradle", # Build tool for Kotlin/JVM
 ]
 
-typst = [
-  "typst",    # Typst compiler, formatter, and language server
-  "tinymist", # Full-featured Typst language server (LSP)
+writing = [
+  "typst",           # Typst compiler, formatter, and language server
+  "tinymist",        # Full-featured Typst language server (LSP)
+  "pandoc",          # Universal document converter (Markdown, LaTeX, Word, PDF, EPUB, ...)
+  "markdown-oxide",  # Markdown PKM language server (LSP for notes and links)
 ]
