@@ -272,6 +272,7 @@ enabled = [
 # Note: Package names must exist in nixpkgs
 # Search packages at: https://search.nixos.org/packages
 user_packages = [
+  # "atuin", # Shell history manager with sync — auto-configured when detected
   # "gleam",
 ]
 
