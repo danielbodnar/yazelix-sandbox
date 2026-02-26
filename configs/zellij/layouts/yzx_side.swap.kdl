@@ -1,10 +1,9 @@
+// Sidebar pane blocks are injected by nushell/scripts/utils/layout_generator.nu
+// from configs/zellij/layouts/fragments/swap_sidebar_*.kdl.
 swap_tiled_layout name="basic" {
     ui exact_panes=4 {
         pane split_direction="vertical" {
-            pane name="sidebar" {
-                command "yazi"
-            	size "20%"
-            }
+            __YAZELIX_SWAP_SIDEBAR_OPEN__
             pane 
         }
     }
@@ -13,10 +12,7 @@ swap_tiled_layout name="basic" {
 swap_tiled_layout name="stacked" {
     ui min_panes=5 {
         pane split_direction="vertical" {
-            pane name="sidebar" {
-                command "yazi"
-            	size "20%"
-            }
+            __YAZELIX_SWAP_SIDEBAR_OPEN__
             pane stacked=true { children; }
         }
     }
@@ -25,10 +21,7 @@ swap_tiled_layout name="stacked" {
 swap_tiled_layout name="three_column" {
     ui min_panes=5 {
         pane split_direction="vertical" {
-            pane name="sidebar" {
-                command "yazi"
-                size "20%"
-            }
+            __YAZELIX_SWAP_SIDEBAR_OPEN__
             pane stacked=true { 
                 children; 
                 size "40%"
@@ -43,10 +36,7 @@ swap_tiled_layout name="three_column" {
 swap_tiled_layout name="sidebar_closed" {
     ui min_panes=5 {
         pane split_direction="vertical" {
-            pane name="sidebar" {
-                command "yazi"
-                size "1"
-            }
+            __YAZELIX_SWAP_SIDEBAR_CLOSED__
             pane stacked=true { 
                 children; 
                 size "50%"
@@ -77,5 +67,3 @@ swap_tiled_layout name="sidebar_closed" {
 //         }
 //     }
 // }
-
-

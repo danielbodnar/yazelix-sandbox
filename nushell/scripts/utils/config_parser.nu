@@ -48,13 +48,15 @@ export def parse_yazelix_config [] {
         transparency: ($raw_config.terminal?.transparency? | default "medium"),
         default_shell: ($raw_config.shell?.default_shell? | default "nu"),
         extra_shells: ($raw_config.shell?.extra_shells? | default []),
-        enable_atuin: ($raw_config.shell?.enable_atuin? | default false),
         helix_mode: ($raw_config.helix?.mode? | default "release"),
+        enable_sidebar: ($raw_config.editor?.enable_sidebar? | default true),
         disable_zellij_tips: ($raw_config.zellij?.disable_tips? | default true | into string),
         zellij_rounded_corners: ($raw_config.zellij?.rounded_corners? | default true | into string),
         yazi_plugins: ($raw_config.yazi?.plugins? | default ["git"]),
         yazi_theme: ($raw_config.yazi?.theme? | default "default"),
         yazi_sort_by: ($raw_config.yazi?.sort_by? | default "alphabetical"),
+        pack_names: ($raw_config.packs?.enabled? | default []),
+        pack_declarations: ($raw_config.packs?.declarations? | default {}),
         config_file: $config_to_read
     }
 }

@@ -11,7 +11,7 @@ def test_yzx_help [] {
 
         # Check for key elements in auto-generated help output
         let required_elements = [
-            "Yazelix Command Suite",
+            "Usage:",
             "Subcommands:",
             "yzx doctor",
             "yzx launch",
@@ -156,6 +156,44 @@ def test_yzx_doctor_exists [] {
     }
 }
 
+def test_yzx_menu_exists [] {
+    print "🧪 Testing yzx menu command exists..."
+
+    try {
+        let output = (yzx | str join "\n")
+
+        if ($output | str contains "yzx menu") {
+            print "  ✅ yzx menu command is documented in help"
+            true
+        } else {
+            print "  ❌ yzx menu command not found in help"
+            false
+        }
+    } catch { |err|
+        print $"  ❌ Exception: ($err.msg)"
+        false
+    }
+}
+
+def test_yzx_config_open_print [] {
+    print "🧪 Testing yzx config open --print..."
+
+    try {
+        let output = (yzx config open --print | into string | str trim)
+
+        if ($output | str ends-with ".toml") and ($output | path exists) {
+            print $"  ✅ Config path resolved: ($output)"
+            true
+        } else {
+            print $"  ❌ Unexpected output: ($output)"
+            false
+        }
+    } catch { |err|
+        print $"  ❌ Exception: ($err.msg)"
+        false
+    }
+}
+
 def main [] {
     print "=== Testing yzx Commands ==="
     print ""
@@ -167,7 +205,9 @@ def main [] {
         (test_yzx_why),
         (test_yzx_config_status),
         (test_yzx_test_exists),
-        (test_yzx_doctor_exists)
+        (test_yzx_doctor_exists),
+        (test_yzx_menu_exists),
+        (test_yzx_config_open_print)
     ]
 
     let passed = ($results | where $it == true | length)
@@ -178,5 +218,6 @@ def main [] {
         print $"✅ All yzx command tests passed \(($passed)/($total)\)"
     } else {
         print $"❌ Some tests failed \(($passed)/($total)\)"
+        error make { msg: "yzx command tests failed" }
     }
 }

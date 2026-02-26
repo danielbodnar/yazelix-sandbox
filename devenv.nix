@@ -1,13 +1,46 @@
 # devenv.nix - Production configuration for Yazelix
 # Mirrors the legacy flake-based shell while benefiting from devenv caching
-{ pkgs, lib, inputs, ... }:
+{
+  pkgs,
+  lib,
+  inputs,
+  ...
+}:
 
 let
   inherit (pkgs.stdenv) isLinux isDarwin;
   system = pkgs.stdenv.hostPlatform.system;
 
   nixglPackages = if isLinux then inputs.nixgl.packages.${system} else null;
-  nixglIntel = if nixglPackages != null && nixglPackages ? nixGLIntel then nixglPackages.nixGLIntel else null;
+
+  # LLM agents packages from numtide/llm-agents.nix (daily updates)
+  llmAgentsPkgs =
+    if inputs ? llm-agents then
+      inputs.llm-agents.packages.${system}
+    else
+      { };
+
+  # Packages to resolve from llm-agents instead of nixpkgs
+  llmAgentsPackageNames = [
+    "amp"
+    "beads"
+    "ccusage"
+    "ccusage-amp"
+    "ccusage-codex"
+    "ccusage-opencode"
+    "claude-code"
+    "coderabbit-cli"
+    "codex"
+    "cursor-agent"
+    "gemini-cli"
+    "goose-cli"
+    "openclaw"
+    "picoclaw"
+    "opencode"
+    "zeroclaw"
+  ];
+  nixglIntel =
+    if nixglPackages != null && nixglPackages ? nixGLIntel then nixglPackages.nixGLIntel else null;
 
   # Import user configuration from TOML
   # IMPORTANT: yazelix.toml is gitignored, which makes it invisible to pure Nix evaluation
@@ -23,7 +56,7 @@ let
     else
       builtins.fromTOML (builtins.readFile defaultTomlConfigFile);
 
-  rawPacks = rawConfig.packs or {};
+  rawPacks = rawConfig.packs or { };
   _ =
     if rawPacks ? language || rawPacks ? tools then
       throw ''
@@ -47,12 +80,15 @@ let
     helix_runtime_path = rawConfig.helix.runtime_path or null;
 
     # Treat empty string as null for editor_command
-    editor_command = let cmd = rawConfig.editor.command or null; in if cmd == "" then null else cmd;
+    editor_command =
+      let
+        cmd = rawConfig.editor.command or null;
+      in
+      if cmd == "" then null else cmd;
     enable_sidebar = rawConfig.editor.enable_sidebar or true;
 
     default_shell = rawConfig.shell.default_shell or "nu";
-    extra_shells = rawConfig.shell.extra_shells or [];
-    enable_atuin = rawConfig.shell.enable_atuin or false;
+    extra_shells = rawConfig.shell.extra_shells or [ ];
 
     terminals = rawConfig.terminal.terminals or [ "ghostty" ];
     manage_terminals = rawConfig.terminal.manage_terminals or true;
@@ -67,14 +103,15 @@ let
 
     ascii_art_mode = rawConfig.ascii.mode or "static";
 
-    pack_names = rawPacks.enabled or [];
-    pack_declarations = rawPacks.declarations or {};
-    user_packages = map (name:
+    pack_names = rawPacks.enabled or [ ];
+    pack_declarations = rawPacks.declarations or { };
+    user_packages = map (
+      name:
       if builtins.hasAttr name pkgs then
         builtins.getAttr name pkgs
       else
         throw "Package '${name}' not found in nixpkgs"
-    ) (rawPacks.user_packages or []);
+    ) (rawPacks.user_packages or [ ]);
   };
 
   boolToString = value: if value then "true" else "false";
@@ -83,11 +120,17 @@ let
   recommendedDepsEnabled = userConfig.recommended_deps or true;
   yaziExtensionsEnabled = userConfig.yazi_extensions or true;
   yaziMediaEnabled = userConfig.yazi_media or true;
-  atuinEnabled = userConfig.enable_atuin or false;
 
   defaultShell = userConfig.default_shell or "nu";
   extraShells = userConfig.extra_shells or [ ];
-  shellsToInclude = lib.unique (["nu" "bash" defaultShell] ++ extraShells);
+  shellsToInclude = lib.unique (
+    [
+      "nu"
+      "bash"
+      defaultShell
+    ]
+    ++ extraShells
+  );
   includeFish = lib.elem "fish" shellsToInclude;
   includeZsh = lib.elem "zsh" shellsToInclude;
 
@@ -119,17 +162,14 @@ let
   helixRuntime = if helixRuntimePath != null then helixRuntimePath else "${helixPackage}/lib/runtime";
 
   editorCommand =
-    if (userConfig.editor_command or null) == null
-    then "${helixPackage}/bin/hx"
-    else userConfig.editor_command;
+    if (userConfig.editor_command or null) == null then
+      "${helixPackage}/bin/hx"
+    else
+      userConfig.editor_command;
 
   terminalList = lib.unique (userConfig.terminals or [ ]);
   manageTerminals = userConfig.manage_terminals or true;
-  preferredTerminal =
-    if terminalList == [ ] then
-      "unknown"
-    else
-      builtins.elemAt terminalList 0;
+  preferredTerminal = if terminalList == [ ] then "unknown" else builtins.elemAt terminalList 0;
   terminalConfigMode = userConfig.terminal_config_mode or "yazelix";
 
   debugMode = userConfig.debug_mode or false;
@@ -138,55 +178,83 @@ let
   enableSidebar = userConfig.enable_sidebar or true;
   showMacchinaOnWelcome = userConfig.show_macchina_on_welcome or false;
 
-  yazelixLayoutName =
-    if enableSidebar then
-      "yzx_side"
-    else
-      "yzx_no_side";
+  yazelixLayoutName = if enableSidebar then "yzx_side" else "yzx_no_side";
 
   # Terminal wrappers replicate the flake-based launchers
   ghosttyWrapper = pkgs.writeShellScriptBin "yazelix-ghostty" (
-    if isLinux then ''
-      MODE="''${YAZELIX_TERMINAL_CONFIG_MODE:-${terminalConfigMode}}"
-      MODE="''${MODE:-auto}"
-      USER_CONF="$HOME/.config/ghostty/config"
-      YZ_CONF="$HOME/.local/share/yazelix/configs/terminal_emulators/ghostty/config"
-      CONF="$YZ_CONF"
-      if [ "$MODE" = "user" ] || [ "$MODE" = "auto" ]; then
-        if [ -f "$USER_CONF" ]; then CONF="$USER_CONF"; fi
-      fi
-      exec ${lib.optionalString (nixglIntel != null) "${nixglIntel}/bin/nixGLIntel "}${pkgs.ghostty}/bin/ghostty \
-        --config-file="$CONF" \
-        --class="com.yazelix.Yazelix" \
-        --x11-instance-name="yazelix" \
-        --title="Yazelix - Ghostty" "$@"
-    '' else ''
-      # macOS: Detect Homebrew-installed Ghostty
-      MODE="''${YAZELIX_TERMINAL_CONFIG_MODE:-${terminalConfigMode}}"
-      MODE="''${MODE:-auto}"
-      USER_CONF="$HOME/.config/ghostty/config"
-      YZ_CONF="$HOME/.local/share/yazelix/configs/terminal_emulators/ghostty/config"
-      CONF="$YZ_CONF"
-      if [ "$MODE" = "user" ] || [ "$MODE" = "auto" ]; then
-        if [ -f "$USER_CONF" ]; then CONF="$USER_CONF"; fi
-      fi
+    if isLinux then
+      ''
+        MODE="''${YAZELIX_TERMINAL_CONFIG_MODE:-${terminalConfigMode}}"
+        MODE="''${MODE:-auto}"
+        USER_CONF="$HOME/.config/ghostty/config"
+        YZ_CONF="$HOME/.local/share/yazelix/configs/terminal_emulators/ghostty/config"
+        CONF="$YZ_CONF"
+        if [ "$MODE" = "user" ] || [ "$MODE" = "auto" ]; then
+          if [ -f "$USER_CONF" ]; then CONF="$USER_CONF"; fi
+        fi
+        # On Wayland, stale IM variables (e.g. GTK_IM_MODULE=ibus without daemon)
+        # can break dead-key/compose input in GTK terminals.
+        if [ -n "''${WAYLAND_DISPLAY:-}" ]; then
+          use_simple_im=0
+          if [ -z "''${GTK_IM_MODULE:-}" ]; then
+            use_simple_im=1
+          fi
+          if [ "''${GTK_IM_MODULE:-}" = "ibus" ]; then
+            if ! command -v pgrep >/dev/null 2>&1 || ! pgrep -x ibus-daemon >/dev/null 2>&1; then
+              use_simple_im=1
+            fi
+          fi
+          case "''${GTK_IM_MODULE:-}" in
+            fcitx|fcitx5)
+              if ! command -v pgrep >/dev/null 2>&1 || { ! pgrep -x fcitx5 >/dev/null 2>&1 && ! pgrep -x fcitx >/dev/null 2>&1; }; then
+                use_simple_im=1
+              fi
+              ;;
+          esac
+          if [ "$use_simple_im" -eq 1 ]; then
+            export GTK_IM_MODULE="simple"
+            unset QT_IM_MODULE XMODIFIERS
+          fi
+        elif [ -z "''${GTK_IM_MODULE:-}" ]; then
+          # X11 fallback when no IM is configured.
+          export GTK_IM_MODULE="simple"
+        fi
+        exec ${
+          lib.optionalString (nixglIntel != null) "${nixglIntel}/bin/nixGLIntel "
+        }${pkgs.ghostty}/bin/ghostty \
+          --config-file="$CONF" \
+          --class="com.yazelix.Yazelix" \
+          --x11-instance-name="yazelix" \
+          --title="Yazelix - Ghostty" "$@"
+      ''
+    else
+      ''
+        # macOS: Detect Homebrew-installed Ghostty
+        MODE="''${YAZELIX_TERMINAL_CONFIG_MODE:-${terminalConfigMode}}"
+        MODE="''${MODE:-auto}"
+        USER_CONF="$HOME/.config/ghostty/config"
+        YZ_CONF="$HOME/.local/share/yazelix/configs/terminal_emulators/ghostty/config"
+        CONF="$YZ_CONF"
+        if [ "$MODE" = "user" ] || [ "$MODE" = "auto" ]; then
+          if [ -f "$USER_CONF" ]; then CONF="$USER_CONF"; fi
+        fi
 
-      # Try to find Ghostty binary (Homebrew installation)
-      GHOSTTY_BIN=""
-      if [ -x "/Applications/Ghostty.app/Contents/MacOS/ghostty" ]; then
-        GHOSTTY_BIN="/Applications/Ghostty.app/Contents/MacOS/ghostty"
-      elif [ -x "$HOME/Applications/Ghostty.app/Contents/MacOS/ghostty" ]; then
-        GHOSTTY_BIN="$HOME/Applications/Ghostty.app/Contents/MacOS/ghostty"
-      else
-        echo "Error: Ghostty not found. Please install via Homebrew:"
-        echo "  brew install --cask ghostty"
-        exit 1
-      fi
+        # Try to find Ghostty binary (Homebrew installation)
+        GHOSTTY_BIN=""
+        if [ -x "/Applications/Ghostty.app/Contents/MacOS/ghostty" ]; then
+          GHOSTTY_BIN="/Applications/Ghostty.app/Contents/MacOS/ghostty"
+        elif [ -x "$HOME/Applications/Ghostty.app/Contents/MacOS/ghostty" ]; then
+          GHOSTTY_BIN="$HOME/Applications/Ghostty.app/Contents/MacOS/ghostty"
+        else
+          echo "Error: Ghostty not found. Please install via Homebrew:"
+          echo "  brew install --cask ghostty"
+          exit 1
+        fi
 
-      exec "$GHOSTTY_BIN" \
-        --config-file="$CONF" \
-        --title="Yazelix - Ghostty" "$@"
-    ''
+        exec "$GHOSTTY_BIN" \
+          --config-file="$CONF" \
+          --title="Yazelix - Ghostty" "$@"
+      ''
   );
 
   kittyWrapper =
@@ -200,12 +268,15 @@ let
         if [ "$MODE" = "user" ] || [ "$MODE" = "auto" ]; then
           if [ -f "$USER_CONF" ]; then CONF="$USER_CONF"; fi
         fi
-        exec ${lib.optionalString (isLinux && nixglIntel != null) "${nixglIntel}/bin/nixGLIntel "}${pkgs.kitty}/bin/kitty \
+        exec ${
+          lib.optionalString (isLinux && nixglIntel != null) "${nixglIntel}/bin/nixGLIntel "
+        }${pkgs.kitty}/bin/kitty \
           --config="$CONF" \
           --class="com.yazelix.Yazelix" \
           --title="Yazelix - Kitty" "$@"
       ''
-    else null;
+    else
+      null;
 
   weztermWrapper =
     if lib.elem "wezterm" terminalList then
@@ -220,13 +291,16 @@ let
         if [ "$MODE" = "user" ] || [ "$MODE" = "auto" ]; then
           if [ -f "$USER_CONF" ]; then CONF="$USER_CONF"; fi
         fi
-        exec ${lib.optionalString (isLinux && nixglIntel != null) "${nixglIntel}/bin/nixGLIntel "}${pkgs.wezterm}/bin/wezterm \
+        exec ${
+          lib.optionalString (isLinux && nixglIntel != null) "${nixglIntel}/bin/nixGLIntel "
+        }${pkgs.wezterm}/bin/wezterm \
           --config-file="$CONF" \
           --config 'window_decorations="NONE"' \
           --config enable_tab_bar=false \
           start --class=com.yazelix.Yazelix "$@"
       ''
-    else null;
+    else
+      null;
 
   alacrittyWrapper =
     if lib.elem "alacritty" terminalList then
@@ -239,12 +313,15 @@ let
         if [ "$MODE" = "user" ] || [ "$MODE" = "auto" ]; then
           if [ -f "$USER_CONF" ]; then CONF="$USER_CONF"; fi
         fi
-        exec ${lib.optionalString (isLinux && nixglIntel != null) "${nixglIntel}/bin/nixGLIntel "}${pkgs.alacritty}/bin/alacritty \
+        exec ${
+          lib.optionalString (isLinux && nixglIntel != null) "${nixglIntel}/bin/nixGLIntel "
+        }${pkgs.alacritty}/bin/alacritty \
           --config-file="$CONF" \
           --class="com.yazelix.Yazelix" \
           --title="Yazelix - Alacritty" "$@"
       ''
-    else null;
+    else
+      null;
 
   footWrapper =
     if isLinux && (lib.elem "foot" terminalList) then
@@ -257,11 +334,14 @@ let
         if [ "$MODE" = "user" ] || [ "$MODE" = "auto" ]; then
           if [ -f "$USER_CONF" ]; then CONF="$USER_CONF"; fi
         fi
-        exec ${lib.optionalString (nixglIntel != null) "${nixglIntel}/bin/nixGLIntel "}${pkgs.foot}/bin/foot \
+        exec ${
+          lib.optionalString (nixglIntel != null) "${nixglIntel}/bin/nixGLIntel "
+        }${pkgs.foot}/bin/foot \
           --config="$CONF" \
           --app-id="com.yazelix.Yazelix" "$@"
       ''
-    else null;
+    else
+      null;
 
   yazelixDesktopLauncher =
     if isLinux then
@@ -270,7 +350,8 @@ let
         export YAZELIX_DIR="$HOME/.config/yazelix"
         exec devenv shell nu "$YAZELIX_DIR/nushell/scripts/core/launch_yazelix.nu"
       ''
-    else null;
+    else
+      null;
 
   yazelixDesktopEntry =
     if isLinux && yazelixDesktopLauncher != null then
@@ -283,15 +364,17 @@ let
         categories = [ "Development" ];
         startupWMClass = "com.yazelix.Yazelix";
       }
-    else null;
+    else
+      null;
 
   ghosttyDeps =
     if manageTerminals && (lib.elem "ghostty" terminalList) then
       filterNull (
-        [ ghosttyWrapper ]  # Wrapper available on both Linux and macOS
-        ++ lib.optionals isLinux [ pkgs.ghostty ]  # Package only on Linux
+        [ ghosttyWrapper ] # Wrapper available on both Linux and macOS
+        ++ lib.optionals isLinux [ pkgs.ghostty ] # Package only on Linux
       )
-    else [ ];
+    else
+      [ ];
   kittyDeps =
     if manageTerminals && (lib.elem "kitty" terminalList) then
       filterNull [ kittyWrapper ]
@@ -300,11 +383,13 @@ let
         pkgs.nerd-fonts.fira-code
         pkgs.nerd-fonts.symbols-only
       ]
-    else [ ];
+    else
+      [ ];
   weztermDeps =
     if manageTerminals && (lib.elem "wezterm" terminalList) then
       filterNull [ weztermWrapper ] ++ [ pkgs.wezterm ]
-    else [ ];
+    else
+      [ ];
   alacrittyDeps =
     if manageTerminals && (lib.elem "alacritty" terminalList) then
       filterNull [ alacrittyWrapper ]
@@ -313,11 +398,13 @@ let
         pkgs.nerd-fonts.fira-code
         pkgs.nerd-fonts.symbols-only
       ]
-    else [ ];
+    else
+      [ ];
   footDeps =
     if isLinux && manageTerminals && (lib.elem "foot" terminalList) then
       filterNull [ footWrapper ] ++ [ pkgs.foot ]
-    else [ ];
+    else
+      [ ];
 
   essentialDeps =
     with pkgs;
@@ -332,10 +419,13 @@ let
       bashInteractive
       macchina
       mise
-      taplo  # TOML toolkit for yazelix.toml configuration
+      taplo # TOML toolkit for yazelix.toml configuration
     ]
     ++ lib.optionals isLinux [ libnotify ]
-    ++ filterNull [ yazelixDesktopLauncher yazelixDesktopEntry ]
+    ++ filterNull [
+      yazelixDesktopLauncher
+      yazelixDesktopEntry
+    ]
     ++ (if isLinux && nixglIntel != null then [ nixglIntel ] else [ ])
     ++ ghosttyDeps
     ++ kittyDeps
@@ -344,62 +434,63 @@ let
     ++ footDeps;
 
   extraShellDeps =
-    (if includeFish then [ pkgs.fish ] else [ ])
-    ++ (if includeZsh then [ pkgs.zsh ] else [ ]);
+    (if includeFish then [ pkgs.fish ] else [ ]) ++ (if includeZsh then [ pkgs.zsh ] else [ ]);
 
-  recommendedDeps =
-    with pkgs;
-    [
-      lazygit
-      atuin
-      carapace
-      markdown-oxide
-    ];
+  recommendedDeps = with pkgs; [
+    lazygit
+    carapace
+  ];
 
-  yaziExtensionsDeps =
-    with pkgs;
-    [
-      p7zip
-      jq
-      fd
-      ripgrep
-      poppler
-    ];
+  yaziExtensionsDeps = with pkgs; [
+    p7zip
+    jq
+    fd
+    ripgrep
+    poppler
+  ];
 
-  yaziMediaDeps =
-    with pkgs;
-    [
-      ffmpeg
-      imagemagick
-    ];
+  yaziMediaDeps = with pkgs; [
+    ffmpeg
+    imagemagick
+  ];
 
-  resolvePkg = name:
+  resolvePkg =
+    name:
     let
+      # Check if this package should come from llm-agents
+      isLlmAgentsPkg = builtins.elem name llmAgentsPackageNames;
+      llmAgentsValue = if isLlmAgentsPkg then llmAgentsPkgs.${name} or null else null;
+      # Fall back to nixpkgs (supports nested paths like "python3Packages.foo")
       path = lib.splitString "." name;
-      value = lib.attrByPath path null pkgs;
+      nixpkgsValue = lib.attrByPath path null pkgs;
     in
-    if value == null then
-      throw "Package '${name}' not found in nixpkgs"
+    if llmAgentsValue != null then
+      llmAgentsValue
+    else if nixpkgsValue != null then
+      nixpkgsValue
+    else if isLlmAgentsPkg then
+      throw "Package '${name}' not found in llm-agents.nix (is the input added to devenv.yaml?)"
     else
-      value;
+      throw "Package '${name}' not found in nixpkgs";
 
   packDeclarations =
-    if builtins.isAttrs (userConfig.pack_declarations or {}) then
+    if builtins.isAttrs (userConfig.pack_declarations or { }) then
       userConfig.pack_declarations
     else
       throw "packs.declarations must be a table of pack definitions";
 
-  packDefinitions =
-    lib.mapAttrs (packName: pkgNames:
-      if builtins.isList pkgNames then
-        map resolvePkg pkgNames
-      else
-        throw "Pack '${packName}' must be a list of package names"
-    ) packDeclarations;
+  packDefinitions = lib.mapAttrs (
+    packName: pkgNames:
+    if builtins.isList pkgNames then
+      map resolvePkg pkgNames
+    else
+      throw "Pack '${packName}' must be a list of package names"
+  ) packDeclarations;
 
   selectedPacks = userConfig.pack_names or [ ];
   packPackages = builtins.concatLists (
-    map (packName:
+    map (
+      packName:
       if builtins.hasAttr packName packDefinitions then
         packDefinitions.${packName}
       else
@@ -416,7 +507,15 @@ let
     ++ packPackages
     ++ (userConfig.user_packages or [ ]);
 
-in {
+in
+{
+  # Pull binaries from caches to speed up builds
+  cachix.pull = [
+    "numtide"        # llm-agents.nix AI tools
+    "helix"          # Helix editor builds
+    "nix-community"  # General community packages
+  ];
+
   packages = allDeps;
 
   env = {

@@ -56,7 +56,7 @@ See [Terminal Emulator Comparison](./terminal_emulators.md) for a detailed break
 
 ### Step 1: Install Nix Package Manager (~2.5GB)
 
-We use the **Determinate Systems Nix Installer** - it's reliable, fast, and includes modern features out of the box:
+Yazelix requires Nix with flakes enabled. We recommend the **Determinate Systems Nix Installer** because it's reliable, fast, and includes modern features out of the box, but any Nix installation with flakes enabled will work.
 
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install
@@ -70,6 +70,21 @@ curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix 
 ```bash
 nix --version
 ```
+
+### Optional: Enable Parallel Evaluation (Determinate Nix)
+
+Determinate Nix supports parallel evaluation, which can speed up operations like
+`nix search`, `nix flake check`, and `nix eval --json`.
+
+To enable it, add this line to your Determinate config:
+
+`/etc/nix/nix.custom.conf`
+
+```conf
+eval-cores = 0
+```
+
+Set `eval-cores` to 0 to use all cores, or 1 to disable.
 
 ### Step 2: Install Nushell
 

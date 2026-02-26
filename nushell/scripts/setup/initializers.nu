@@ -2,7 +2,7 @@
 # Universal shell initializer generator for Yazelix
 # Generates initializer scripts for all supported shells
 
-def main [yazelix_dir: string, recommended: bool, atuin_enabled: bool, shells_to_configure_str: string] {
+def main [yazelix_dir: string, shells_to_configure_str: string] {
     # Import constants for XDG paths
     use ../utils/constants.nu *
 
@@ -63,14 +63,7 @@ def main [yazelix_dir: string, recommended: bool, atuin_enabled: bool, shells_to
             # Compute expected output path for this tool/shell
             let output_file = $"($init_dir)/($tool.name)_init.($shell.ext)"
 
-            # Special-case: atuin controlled by its own toggle, independent of recommended
-            if ($tool.name == "atuin") and (not $atuin_enabled) {
-                if ($output_file | path exists) { rm $output_file }
-                { status: "disabled", tool: $tool.name, shell: $shell.name, reason: "atuin disabled" }
-            } else if (not $tool.required) and (not $recommended) {
-                if ($output_file | path exists) { rm $output_file }
-                { status: "skipped", tool: $tool.name, shell: $shell.name, reason: "recommended" }
-            } else if (which $tool.name | is-empty) {
+            if (which $tool.name | is-empty) {
                 # Tool not found: record and remove any previous output
                 if $tool.required {
                     if ($output_file | path exists) { rm $output_file }

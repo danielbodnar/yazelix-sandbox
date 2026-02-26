@@ -117,6 +117,7 @@ export def generate_merged_zellij_config [yazelix_dir: string] {
     let kitty_protocol = ($config | get -o support_kitty_keyboard_protocol | default "true")
     let kitty_protocol_value = if ($kitty_protocol | str starts-with "false") { "false" } else { "true" }
     let default_shell = ($config.default_shell? | default "nu")
+    let default_layout_name = if ($config.enable_sidebar? | default true) { "yzx_side" } else { "yzx_no_side" }
     
     print "🔄 Regenerating Zellij configuration..."
     
@@ -170,7 +171,7 @@ export def generate_merged_zellij_config [yazelix_dir: string] {
         "pane_frames false",
         $"support_kitty_keyboard_protocol ($kitty_protocol_value)",
         $"default_shell \"($default_shell)\"",
-        $"default_layout \"($yazelix_layout_dir)/yzx_side.kdl\"",
+        $"default_layout \"($yazelix_layout_dir)/($default_layout_name).kdl\"",
         $"layout_dir \"($yazelix_layout_dir)\""
     ] | str join "\n"
     

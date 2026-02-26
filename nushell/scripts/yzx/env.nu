@@ -18,11 +18,17 @@ export def "yzx env" [
 
     let original_dir = (pwd)
 
-    if $no_shell {
-        # For --no-shell, we need to cd back after devenv loads
-        let stay_bash_command = $"cd '($original_dir)' && exec bash"
+    let has_setpriv = (which setpriv | is-not-empty)
+    let trap_supervisor = "trap 'kill 0' HUP TERM; exec \"$@\""
 
-        run_in_devenv_shell $stay_bash_command --env-only --quiet --force-refresh=$needs_refresh
+    if $no_shell {
+        # For --no-shell, preserve current behavior and launch bash in devenv.
+        if $has_setpriv {
+            run_in_devenv_shell_command "setpriv" "--pdeathsig" "TERM" "--" "bash" --cwd $original_dir --env-only --quiet --force-refresh=$needs_refresh
+        } else {
+            # macOS and other systems without setpriv use POSIX trap fallback.
+            run_in_devenv_shell_command "sh" "-c" $trap_supervisor "_" "bash" --cwd $original_dir --env-only --quiet --force-refresh=$needs_refresh
+        }
 
         if $needs_refresh {
             mark_config_state_applied $env_prep.config_state
@@ -38,13 +44,16 @@ export def "yzx env" [
             _ => [$shell_name]
         }
         let shell_exec = ($shell_command | first)
-        let command_str = ($shell_command | str join " ")
-        # Change directory back to original location before exec'ing the shell
-        let exec_command = $"cd '($original_dir)' && exec ($command_str)"
+        # Prefer Linux parent-death signaling for force-close paths.
+        # Fall back to POSIX trap on systems without setpriv (for example macOS).
 
         try {
             with-env {SHELL: $shell_exec} {
-                run_in_devenv_shell $exec_command --env-only --quiet --force-refresh=$needs_refresh
+                if $has_setpriv {
+                    run_in_devenv_shell_command "setpriv" "--pdeathsig" "TERM" "--" ...$shell_command --cwd $original_dir --env-only --quiet --force-refresh=$needs_refresh
+                } else {
+                    run_in_devenv_shell_command "sh" "-c" $trap_supervisor "_" ...$shell_command --cwd $original_dir --env-only --quiet --force-refresh=$needs_refresh
+                }
             }
 
             if $needs_refresh {

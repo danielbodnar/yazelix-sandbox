@@ -10,8 +10,6 @@ def main [] {
 
     # Extract values from config (all properly typed from TOML)
     let yazelix_dir = ($env.YAZELIX_DIR? | default ($env.HOME | path join ".config" "yazelix"))
-    let recommended = ($config.recommended_deps? | default true)
-    let enable_atuin = ($config.enable_atuin? | default false)
     let default_shell = ($config.default_shell? | default "nu")
     let debug_mode = ($config.debug_mode? | default false)
     let skip_welcome_screen = ($config.skip_welcome_screen? | default false)
@@ -96,7 +94,7 @@ def main [] {
 
     # Generate shell initializers for configured shells only
     with-env {YAZELIX_QUIET_MODE: (if $quiet_mode { "true" } else { "false" })} {
-        nu $"($yazelix_dir)/nushell/scripts/setup/initializers.nu" $yazelix_dir $recommended $enable_atuin ($shells_to_configure | str join ",")
+        nu $"($yazelix_dir)/nushell/scripts/setup/initializers.nu" $yazelix_dir ($shells_to_configure | str join ",")
     }
 
     # Setup shell hooks for configured shells

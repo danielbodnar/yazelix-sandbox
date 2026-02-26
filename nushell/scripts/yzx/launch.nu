@@ -6,6 +6,17 @@ use ../utils/common.nu [get_max_cores]
 use ../utils/environment_bootstrap.nu prepare_environment
 use ../core/start_yazelix.nu [start_yazelix_session]
 
+# Check if unfree pack is enabled in yazelix.toml
+def is_unfree_enabled [] {
+    let yazelix_dir = "~/.config/yazelix" | path expand
+    let toml_file = ($yazelix_dir | path join "yazelix.toml")
+    let default_toml = ($yazelix_dir | path join "yazelix_default.toml")
+    let config_file = if ($toml_file | path exists) { $toml_file } else { $default_toml }
+    let raw_config = open $config_file
+    let pack_names = ($raw_config.packs?.enabled? | default [])
+    $pack_names | any { |name| $name == "unfree" }
+}
+
 # Launch yazelix
 export def "yzx launch" [
     --here             # Start in current terminal instead of launching new terminal
@@ -165,7 +176,7 @@ export def "yzx launch" [
             # Build environment variable exports for bash
             let env_exports = [
                 (if ($env.YAZELIX_CONFIG_OVERRIDE? | is-not-empty) { $"export YAZELIX_CONFIG_OVERRIDE='($env.YAZELIX_CONFIG_OVERRIDE)'; " } else { "" })
-                (if ($env.ZELLIJ_DEFAULT_LAYOUT? | is-not-empty) { $"export ZELLIJ_DEFAULT_LAYOUT='($env.ZELLIJ_DEFAULT_LAYOUT)'; " } else { "" })
+                (if (($env.YAZELIX_SWEEP_TEST_ID? | is-not-empty) and ($env.ZELLIJ_DEFAULT_LAYOUT? | is-not-empty)) { $"export ZELLIJ_DEFAULT_LAYOUT='($env.ZELLIJ_DEFAULT_LAYOUT)'; " } else { "" })
                 (if ($env.YAZELIX_SWEEP_TEST_ID? | is-not-empty) { $"export YAZELIX_SWEEP_TEST_ID='($env.YAZELIX_SWEEP_TEST_ID)'; " } else { "" })
                 (if ($env.YAZELIX_SKIP_WELCOME? | is-not-empty) { $"export YAZELIX_SKIP_WELCOME='($env.YAZELIX_SKIP_WELCOME)'; " } else { "" })
                 (if ($env.YAZELIX_TERMINAL? | is-not-empty) { $"export YAZELIX_TERMINAL='($env.YAZELIX_TERMINAL)'; " } else { "" })
@@ -186,10 +197,12 @@ export def "yzx launch" [
             # Must run devenv from the directory containing devenv.nix
             let yazelix_dir = "~/.config/yazelix"
             if $needs_refresh and $verbose_mode {
-                print "♻️  Config changed since last launch – rebuilding environment"
+                let reason = ($config_state.refresh_reason? | default "config or devenv inputs changed since last launch")
+                print $"♻️  ($reason) – rebuilding environment"
             }
             let max_cores = get_max_cores
-            let devenv_cmd = $"cd ($yazelix_dir) && devenv --impure --cores ($max_cores) shell -- sh -c '($full_cmd)'"
+            let unfree_prefix = if (is_unfree_enabled) { "NIXPKGS_ALLOW_UNFREE=1 " } else { "" }
+            let devenv_cmd = $"cd ($yazelix_dir) && ($unfree_prefix)devenv --impure --cores ($max_cores) shell -- sh -c '($full_cmd)'"
             ^sh -c $devenv_cmd
             if $needs_refresh {
                 mark_config_state_applied $config_state

@@ -45,6 +45,10 @@ Load Yazelix environment without UI
 Run a single command in the Yazelix environment and exit
 - Quote args that start with `-` to avoid flag parsing (e.g., `"-lc"`)
 
+### `yzx gen_config <terminal>`
+Print a terminal emulator config generated from `yazelix_default.toml`
+- Example: `yzx gen_config alacritty`
+
 ### `yzx restart`
 Restart Yazelix (handles persistent sessions)
 
@@ -54,13 +58,44 @@ Show system information and settings
 ### `yzx update`
 Manage Yazelix updates
 - `yzx update devenv`: Update the devenv CLI in your Nix profile (`--verbose` shows underlying commands)
-- `yzx update lock`: Refresh `devenv.lock` via `devenv update` (`--yes` skips prompt, `--verbose` shows command)
 - `yzx update zjstatus`: Update bundled zjstatus.wasm plugin
 - `yzx update repo`: Pull latest Yazelix updates (`--stash` auto-stashes changes, `--verbose` shows git commands)
-- `yzx update all`: Run `devenv`, `lock --yes`, and `zjstatus` updates
+- `yzx update all`: Run safe updates (`devenv` + `zjstatus`)
+
+Maintainer-only updates:
+- `yzx dev update_lock`: Refresh `devenv.lock` via `devenv update` (`--yes` skips prompt, `--verbose` shows command)
+- `yzx dev update_nix`: Upgrade Determinate Nix via `determinate-nixd` (`--yes` skips prompt, `--verbose` shows command; sudo required; only works if Determinate Nix is installed)
+- `yzx dev sync_terminal_configs`: Regenerate terminal configs and sync snapshots into `configs/terminal_emulators/`
+
+### `yzx gc [deep [PERIOD] | deeper]`
+Garbage collection for Nix store
+- `yzx gc`: Clean devenv generations + remove unreferenced paths
+- `yzx gc deep`: Also delete generations older than 30 days
+- `yzx gc deep 7d`: Delete generations older than 7 days (configurable period)
+- `yzx gc deeper`: Delete ALL old generations (most aggressive)
+
+### `yzx packs [--expand] [--all]`
+Show enabled packs and their sizes
+- `--expand`: Show individual packages within each pack
+- `--all`: Show all declared packs (even disabled ones)
 
 ### `yzx versions`
 Display all tool versions
+
+### `yzx menu [--popup]`
+Interactive command palette (fuzzy search)
+- Default: inline mode in current terminal
+- `--popup`: open in a Zellij floating pane (errors if not in Zellij)
+- Lists most `yzx` commands while hiding maintenance-heavy or low-signal entries (`yzx dev*`, `yzx sweep*`, `yzx env`, `yzx bench`, `yzx config_status`, `yzx lint`, `yzx profile`, `yzx test`, `yzx run`)
+- Cancel with `Esc`
+- In popup mode after running a command: `Backspace` returns to menu, `Enter`/`Esc` closes popup
+- Keybind: `Alt Shift m` opens the popup menu in Zellij
+- Popup pane is named `yzx_menu` to avoid duplicate menu instances
+
+### `yzx config open [--print]`
+Open the active Yazelix configuration file in your editor
+- Uses `$EDITOR` (set by Yazelix from `[editor] command` in yazelix.toml)
+- `--print`: print the resolved config path without opening
 
 ### `yzx config_status [shell]`
 Check shell configuration status
@@ -94,7 +129,19 @@ yzx config_status bash        # Check bash integration
 # Updates
 yzx update devenv             # Update devenv CLI
 yzx update lock --yes          # Refresh devenv.lock without prompt
+yzx update nix                # Upgrade Determinate Nix via determinate-nixd (sudo)
 yzx update repo --stash        # Pull repo updates and reapply local changes
+
+# Garbage collection
+yzx gc                        # Safe: clean devenv + remove unreferenced paths
+yzx gc deep                   # Medium: also delete generations older than 30d
+yzx gc deep 7d                # Medium: delete generations older than 7 days
+yzx gc deeper                 # Aggressive: delete ALL old generations
+
+# Packs
+yzx packs                     # Show enabled packs summary with sizes
+yzx packs --expand            # Show packages within each pack
+yzx packs --all               # Show all declared packs (even disabled)
 
 # Testing and benchmarking
 yzx test                      # Run all tests (non-visual)

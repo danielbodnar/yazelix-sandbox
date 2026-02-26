@@ -2,13 +2,15 @@
 # Focus the Helix pane from Yazi
 
 use ../utils/logging.nu log_to_file
+use ../utils/config_parser.nu parse_yazelix_config
 use zellij.nu [get_running_command, is_hx_running, get_focused_pane_name, move_focused_pane_to_top]
 
 export def main [] {
     log_to_file "focus_helix.log" "focus_helix called from Yazi"
 
     # Check if sidebar mode is enabled
-    let sidebar_enabled = ($env.YAZELIX_ENABLE_SIDEBAR? | default "true") == "true"
+    let config = parse_yazelix_config
+    let sidebar_enabled = ($config.enable_sidebar? | default true)
     if (not $sidebar_enabled) {
         log_to_file "focus_helix.log" "Sidebar mode disabled - focus_helix not available"
         return

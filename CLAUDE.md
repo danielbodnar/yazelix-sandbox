@@ -89,11 +89,17 @@ When creating new files or directories, always use underscores to maintain consi
 
 Example: When deciding whether `yzx doctor --fix` should auto-fix user runtime conflicts, reason through user intent (explicit `--fix` flag), safety (backup approach), and the nature of the problem (system debris vs. user data).
 
+## Verification Requirements
+
+- **Always test the exact functions or commands you change** before committing.
+- If a command cannot be executed in this environment, explain why and provide the nearest safe alternative.
+
 ## Yazelix Versioning
 
 **Yazelix versioning:**
 - Follow the current project versioning scheme used in tags/releases
 - When referencing versions in documentation or migration notes, only use actual version numbers that exist
+- **Keep `YAZELIX_VERSION` in sync with git tags**: When creating a new git tag, update `nushell/scripts/utils/constants.nu` to match (e.g., `export const YAZELIX_VERSION = "v12.3"`). This version is displayed in the zjstatus bar.
 
 ## Documentation and User Guidance Principles
 

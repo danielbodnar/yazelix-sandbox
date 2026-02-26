@@ -5,6 +5,7 @@
 use ../utils/config_manager.nu *
 use ../utils/constants.nu *
 use ../utils/version_info.nu *
+use ../utils/ascii_art.nu [get_yazelix_colors]
 use ../utils/config_parser.nu parse_yazelix_config
 use ../utils/config_state.nu [compute_config_state mark_config_state_applied]
 use ../utils/common.nu [get_max_cores]
@@ -15,6 +16,11 @@ use ./start_yazelix.nu [start_yazelix_session]
 export use ../yzx/launch.nu *
 export use ../yzx/env.nu *
 export use ../yzx/run.nu *
+export use ../yzx/packs.nu *
+export use ../yzx/gc.nu *
+export use ../yzx/dev.nu *
+export use ../yzx/menu.nu *
+export use ../yzx/gen_config.nu *
 
 # =============================================================================
 # YAZELIX COMMANDS WITH NATIVE SUBCOMMAND SUPPORT
@@ -33,11 +39,96 @@ export use ../yzx/run.nu *
 #   yzx test      - Run test suite
 #   yzx lint      - Validate script syntax
 #   yzx versions  - Show tool versions
+def compare_versions [left: string, right: string] {
+    let left_parts = ($left | split row "." | each { |part| $part | into int })
+    let right_parts = ($right | split row "." | each { |part| $part | into int })
+
+    for idx in 0..2 {
+        let left_value = ($left_parts | get -o $idx | default 0)
+        let right_value = ($right_parts | get -o $idx | default 0)
+        if $left_value > $right_value {
+            return 1
+        }
+        if $left_value < $right_value {
+            return (-1)
+        }
+    }
+
+    return (0)
+}
+
+def parse_semver [value: string] {
+    $value | parse --regex '(\d+\.\d+\.\d+)' | get capture0 | last | default ""
+}
+
+def build_version_warning [tool: string, installed_raw: string, pinned: string] {
+    if $installed_raw in ["not installed", "error"] {
+        return null
+    }
+
+    let installed = (parse_semver $installed_raw)
+    if ($installed | is-empty) or $installed == $pinned {
+        return null
+    }
+
+    let status = if (compare_versions $installed $pinned) == 1 { "ahead" } else { "stale" }
+    $"($tool) ($installed) is ($status) vs pinned ($pinned)"
+}
+
 export def yzx [
     --version (-V)  # Show version information
+    --version-short (-v)  # Show version information
 ] {
-    if $version {
+    if $version or $version_short {
         print $"Yazelix ($YAZELIX_VERSION)"
+
+        let devenv_version = if (which devenv | is-empty) {
+            "not installed"
+        } else {
+            try { (devenv --version | lines | first) } catch { "error" }
+        }
+
+        let nix_version = if (which nix | is-empty) {
+            "not installed"
+        } else {
+            try { (nix --version | lines | first) } catch { "error" }
+        }
+
+        let determinate_version = if (which determinate-nixd | is-empty) {
+            "not installed"
+        } else {
+            try {
+                let result = (^determinate-nixd version | complete)
+                if $result.exit_code == 0 {
+                    $result.stdout | lines | first
+                } else {
+                    "error"
+                }
+            } catch { "error" }
+        }
+
+        let warnings = ([
+            (build_version_warning "devenv" $devenv_version $PINNED_DEVENV_VERSION)
+            (build_version_warning "nix" $nix_version $PINNED_NIX_VERSION)
+        ] | where ($it | is-not-empty))
+
+        let colors = get_yazelix_colors
+        let key_color = $colors.cyan
+        let value_color = $colors.purple
+        let warn_color = $colors.yellow
+        let success_color = $colors.green
+        let reset_color = $colors.reset
+
+        print $"($key_color)devenv:($reset_color) ($value_color)($devenv_version)($reset_color)"
+        print $"($key_color)nix:($reset_color) ($value_color)($nix_version)($reset_color)"
+        print $"($key_color)determinate-nixd:($reset_color) ($value_color)($determinate_version)($reset_color)"
+
+        if ($warnings | length) > 0 {
+            print $"($warn_color)⚠️  Version drift detected:($reset_color)"
+            $warnings | each { |warning| print $"   - ($warning)" }
+        } else {
+            print $"($success_color)✅ Versions match Yazelix pinned values.($reset_color)"
+        }
         return
     }
     help yzx
@@ -78,8 +169,14 @@ export def "yzx config_status" [shell?: string] {
 }
 
 # List available versions
-export def "yzx versions" [] {
-    nu ~/.config/yazelix/nushell/scripts/utils/version_info.nu
+export def "yzx versions" [
+    --save(-s)
+] {
+    if $save {
+        nu ~/.config/yazelix/nushell/scripts/utils/version_info.nu --save
+    } else {
+        nu ~/.config/yazelix/nushell/scripts/utils/version_info.nu
+    }
 }
 
 # Show system info
@@ -107,27 +204,53 @@ export def "yzx info" [] {
     print "=========================="
 }
 
-# Helper: Kill the current Zellij session
-def kill_current_zellij_session [] {
+# Helper: Resolve the current Zellij session from environment or CLI.
+def get_current_zellij_session [] {
+    if ($env.ZELLIJ_SESSION_NAME? | is-not-empty) {
+        return $env.ZELLIJ_SESSION_NAME
+    }
+
     try {
-        let current_session = (zellij list-sessions
+        let current_line = (
+            zellij list-sessions
             | lines
-            | where $it =~ 'current'
+            | where {|line| ($line =~ '\bcurrent\b')}
             | first
-            | split row " "
-            | first)
+        )
 
-        # Strip ANSI escape codes
-        let clean_session = ($current_session | str replace -ra '\u001b\[[0-9;]*[A-Za-z]' '')
+        let clean_line = (
+            $current_line
+            | str replace -ra '\u001b\[[0-9;]*[A-Za-z]' ''
+            | str replace -r '^>\s*' ''
+            | str trim
+        )
 
-        if ($clean_session | is-empty) {
-            print "⚠️  No current Zellij session detected"
+        if ($clean_line | is-empty) {
             return null
         }
 
-        print $"Killing Zellij session: ($clean_session)"
-        zellij kill-session $clean_session
-        return $clean_session
+        return (
+            $clean_line
+            | split row " "
+            | where {|token| $token != ""}
+            | first
+        )
+    } catch {
+        return null
+    }
+}
+
+# Helper: Kill a specific Zellij session
+def kill_zellij_session [session_name?: string] {
+    try {
+        if ($session_name | is-empty) {
+            print "⚠️  No Zellij session detected to close"
+            return null
+        }
+
+        print $"Killing Zellij session: ($session_name)"
+        zellij kill-session $session_name
+        return $session_name
     } catch {|err|
         print $"❌ Failed to kill session: ($err.msg)"
         return null
@@ -140,6 +263,7 @@ export def "yzx restart" [] {
     let config = $env_prep.config
     let manage_terminals = ($config.manage_terminals? | default true)
     let needs_refresh = $env_prep.needs_refresh
+    let session_to_kill = get_current_zellij_session
 
     # Detect if we're in a Yazelix-controlled terminal (launched via wrapper)
     let is_yazelix_terminal = ($env.YAZELIX_TERMINAL_CONFIG_MODE? | is-not-empty)
@@ -166,8 +290,9 @@ export def "yzx restart" [] {
     # Wait for new session to spawn
     sleep 1sec
 
-    # Kill old session (Yazelix terminals will close, vanilla stays open)
-    kill_current_zellij_session
+    # Kill the originating session after launching the new window.
+    # yzx launch clears inherited Zellij context vars so the new window starts independently.
+    kill_zellij_session $session_to_kill
 }
 
 # Run health checks and diagnostics
@@ -183,10 +308,13 @@ export def "yzx doctor" [
 export def "yzx update" [] {
     print "Yazelix update commands:"
     print "  yzx update devenv  # Update the devenv CLI in your Nix profile"
-    print "  yzx update lock    # Refresh devenv.lock using devenv update"
     print "  yzx update zjstatus  # Update bundled zjstatus.wasm plugin"
     print "  yzx update repo    # Pull latest Yazelix updates"
-    print "  yzx update all     # Run every update command"
+    print "  yzx update all     # Run safe update commands (excludes dev-only commands)"
+    print ""
+    print "Maintainer-only updates:"
+    print "  yzx dev update_lock  # Refresh devenv.lock using devenv update"
+    print "  yzx dev update_nix   # Upgrade Determinate Nix via determinate-nixd (sudo required)"
 }
 
 export def "yzx update devenv" [
@@ -250,54 +378,17 @@ export def "yzx update devenv" [
     }
 }
 
-export def "yzx update lock" [
-    --verbose  # Show the underlying devenv command
-    --yes      # Skip confirmation prompt
-] {
-    use ~/.config/yazelix/nushell/scripts/utils/nix_detector.nu ensure_nix_available
-    ensure_nix_available
-
-    let yazelix_dir = "~/.config/yazelix" | path expand
-
-    if not $yes {
-        print "⚠️  This updates Yazelix inputs (devenv.lock) to latest upstream versions."
-        print "   If upstream changes are broken, you may hit bugs before fixes land."
-        print "   Prefer a safer path? The Yazelix maintainer updates the project at least once a month."
-        let confirm = (input "Continue? [y/N]: " | str downcase)
-        if $confirm not-in ["y", "yes"] {
-            print "Aborted."
-            exit 0
-        }
-    }
-
-    if $verbose {
-        print $"⚙️ Running: devenv update \(cwd: ($yazelix_dir)\)"
-    } else {
-        print "🔄 Updating Yazelix inputs (devenv.lock)..."
-    }
-
-    try {
-        do {
-            cd $yazelix_dir
-            ^devenv update
-        }
-        print "✅ devenv.lock updated. Review and commit the changes if everything looks good."
-    } catch {|err|
-        print $"❌ devenv update failed: ($err.msg)"
-        print "   Check your network connection and devenv.yaml inputs, then try again."
-        exit 1
-    }
-}
 
 # Update zjstatus plugin
 export def "yzx update zjstatus" [] {
     nu ~/.config/yazelix/nushell/scripts/dev/update_zjstatus.nu
 }
 
+
 # Run all available update commands
 export def "yzx update all" [] {
+    print "ℹ️  Note: update all skips maintainer-only commands (see 'yzx update')."
     yzx update devenv
-    yzx update lock --yes
     yzx update zjstatus
 }
 

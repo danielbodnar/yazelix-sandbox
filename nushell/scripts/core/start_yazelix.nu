@@ -1,7 +1,6 @@
 #!/usr/bin/env nu
 # ~/.config/yazelix/nushell/scripts/core/start_yazelix.nu
 
-use ../utils/constants.nu YAZELIX_ENV_VARS
 use ../utils/environment_bootstrap.nu *
 
 def _start_yazelix_impl [cwd_override?: string, --verbose, --setup-only] {
@@ -67,11 +66,12 @@ def _start_yazelix_impl [cwd_override?: string, --verbose, --setup-only] {
         $original_dir
     }
 
-    # Check for layout override (for testing), default to constant
-    let layout = if ($env.ZELLIJ_DEFAULT_LAYOUT? | is-not-empty) {
+    # Resolve layout from yazelix.toml; only honor env override for sweep tests.
+    let configured_layout = if ($config.enable_sidebar? | default true) { "yzx_side" } else { "yzx_no_side" }
+    let layout = if ($env.YAZELIX_SWEEP_TEST_ID? | is-not-empty) and ($env.ZELLIJ_DEFAULT_LAYOUT? | is-not-empty) {
         $env.ZELLIJ_DEFAULT_LAYOUT
     } else {
-        $YAZELIX_ENV_VARS.ZELLIJ_DEFAULT_LAYOUT
+        $configured_layout
     }
     # Resolve layout to an absolute file path so it works even if user config overrides layout_dir
     let layout_path = if ($layout | str contains "/") or ($layout | str ends-with ".kdl") {

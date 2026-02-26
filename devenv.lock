@@ -1,11 +1,32 @@
 {
   "nodes": {
+    "blueprint": {
+      "inputs": {
+        "nixpkgs": [
+          "llm-agents",
+          "nixpkgs"
+        ],
+        "systems": "systems"
+      },
+      "locked": {
+        "lastModified": 1771437256,
+        "owner": "numtide",
+        "repo": "blueprint",
+        "rev": "06ee7190dc2620ea98af9eb225aa9627b68b0e33",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "blueprint",
+        "type": "github"
+      }
+    },
     "crane": {
       "locked": {
-        "lastModified": 1767744144,
+        "lastModified": 1771121070,
         "owner": "ipetkov",
         "repo": "crane",
-        "rev": "2fb033290bf6b23f226d4c8b32f7f7a16b043d7e",
+        "rev": "a2812c19f1ed2e5ed5ce2ef7109798b575c180e1",
         "type": "github"
       },
       "original": {
@@ -17,10 +38,10 @@
     "devenv": {
       "locked": {
         "dir": "src/modules",
-        "lastModified": 1768133288,
+        "lastModified": 1771419682,
         "owner": "cachix",
         "repo": "devenv",
-        "rev": "b3d5f5d2fe88b78341ea30fec4fd5ae1a3a3c214",
+        "rev": "f77fc4de35c184d9ef9a32d5d7e9033351bcdfdc",
         "type": "github"
       },
       "original": {
@@ -47,7 +68,7 @@
     },
     "flake-utils": {
       "inputs": {
-        "systems": "systems"
+        "systems": "systems_2"
       },
       "locked": {
         "lastModified": 1731533236,
@@ -64,7 +85,7 @@
     },
     "flake-utils_2": {
       "inputs": {
-        "systems": "systems_2"
+        "systems": "systems_3"
       },
       "locked": {
         "lastModified": 1731533236,
@@ -88,10 +109,10 @@
         ]
       },
       "locked": {
-        "lastModified": 1767281941,
+        "lastModified": 1770726378,
         "owner": "cachix",
         "repo": "git-hooks.nix",
-        "rev": "f0927703b7b1c8d97511c4116eb9b4ec6645a0fa",
+        "rev": "5eaaedde414f6eb1aea8b8525c466dc37bba95ae",
         "type": "github"
       },
       "original": {
@@ -126,10 +147,10 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1767943678,
+        "lastModified": 1771429468,
         "owner": "helix-editor",
         "repo": "helix",
-        "rev": "10f07d7eb089430930e6d3547a98b440b927d025",
+        "rev": "1a38979aaa53ea96425a04413c871600ee5845e7",
         "type": "github"
       },
       "original": {
@@ -138,10 +159,29 @@
         "type": "github"
       }
     },
+    "llm-agents": {
+      "inputs": {
+        "blueprint": "blueprint",
+        "nixpkgs": "nixpkgs_2",
+        "treefmt-nix": "treefmt-nix"
+      },
+      "locked": {
+        "lastModified": 1771598023,
+        "owner": "numtide",
+        "repo": "llm-agents.nix",
+        "rev": "4844fc996b7853d2556bad744489f3ae88741f03",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "llm-agents.nix",
+        "type": "github"
+      }
+    },
     "nixgl": {
       "inputs": {
         "flake-utils": "flake-utils",
-        "nixpkgs": "nixpkgs_2"
+        "nixpkgs": "nixpkgs_3"
       },
       "locked": {
         "lastModified": 1762090880,
@@ -158,10 +198,10 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1767892417,
+        "lastModified": 1771008912,
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "3497aa5c9457a9d88d71fa93a4a8368816fbeeba",
+        "rev": "a82ccc39b39b621151d6732718e3e250109076fa",
         "type": "github"
       },
       "original": {
@@ -173,10 +213,25 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1768135384,
+        "lastModified": 1771207753,
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "d1c15b7d5806069da59e819999d70e1cec0760bf",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixpkgs-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_3": {
+      "locked": {
+        "lastModified": 1771434361,
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "d14a6b85f0def4855a36caf63f65a96dfcc71a27",
+        "rev": "958556a89ccbbb700e669037e02a3f7bb8a7a878",
         "type": "github"
       },
       "original": {
@@ -185,12 +240,12 @@
         "type": "github"
       }
     },
-    "nixpkgs_3": {
+    "nixpkgs_4": {
       "locked": {
-        "lastModified": 1768127708,
+        "lastModified": 1771008912,
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "ffbc9f8cbaacfb331b6017d5a5abb21a492c9a38",
+        "rev": "a82ccc39b39b621151d6732718e3e250109076fa",
         "type": "github"
       },
       "original": {
@@ -200,12 +255,12 @@
         "type": "github"
       }
     },
-    "nixpkgs_4": {
+    "nixpkgs_5": {
       "locked": {
-        "lastModified": 1768032153,
+        "lastModified": 1771177547,
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "3146c6aa9995e7351a398e17470e15305e6e18ff",
+        "rev": "ac055f38c798b0d87695240c7b761b82fc7e5bc2",
         "type": "github"
       },
       "original": {
@@ -220,8 +275,9 @@
         "devenv": "devenv",
         "git-hooks": "git-hooks",
         "helix": "helix",
+        "llm-agents": "llm-agents",
         "nixgl": "nixgl",
-        "nixpkgs": "nixpkgs_3",
+        "nixpkgs": "nixpkgs_4",
         "pre-commit-hooks": [
           "git-hooks"
         ],
@@ -236,10 +292,10 @@
         ]
       },
       "locked": {
-        "lastModified": 1768100056,
+        "lastModified": 1771384185,
         "owner": "oxalica",
         "repo": "rust-overlay",
-        "rev": "71a69fd633552550de7cb05cc149e4a99ff6f3b6",
+        "rev": "23dd7fa91602a68bd04847ac41bc10af1e6e2fd2",
         "type": "github"
       },
       "original": {
@@ -256,10 +312,10 @@
         ]
       },
       "locked": {
-        "lastModified": 1768100056,
+        "lastModified": 1771384185,
         "owner": "oxalica",
         "repo": "rust-overlay",
-        "rev": "71a69fd633552550de7cb05cc149e4a99ff6f3b6",
+        "rev": "23dd7fa91602a68bd04847ac41bc10af1e6e2fd2",
         "type": "github"
       },
       "original": {
@@ -296,18 +352,52 @@
         "type": "github"
       }
     },
+    "systems_3": {
+      "locked": {
+        "lastModified": 1681028828,
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-systems",
+        "repo": "default",
+        "type": "github"
+      }
+    },
+    "treefmt-nix": {
+      "inputs": {
+        "nixpkgs": [
+          "llm-agents",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1770228511,
+        "owner": "numtide",
+        "repo": "treefmt-nix",
+        "rev": "337a4fe074be1042a35086f15481d763b8ddc0e7",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "treefmt-nix",
+        "type": "github"
+      }
+    },
     "zjstatus": {
       "inputs": {
         "crane": "crane",
         "flake-utils": "flake-utils_2",
-        "nixpkgs": "nixpkgs_4",
+        "nixpkgs": "nixpkgs_5",
         "rust-overlay": "rust-overlay_2"
       },
       "locked": {
-        "lastModified": 1766016463,
+        "lastModified": 1771148613,
         "owner": "dj95",
         "repo": "zjstatus",
-        "rev": "9a4b88fdceee8eb2b8c28111c53e94254d61c994",
+        "rev": "7a039f56da80681408454d6e175fde3f54b9e592",
         "type": "github"
       },
       "original": {

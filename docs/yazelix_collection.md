@@ -31,9 +31,7 @@ Yazelix is built on the shoulders of giants. Here are the projects, tools, and p
 
 ## Recommended Tools
 - [lazygit](https://github.com/jesseduffield/lazygit) — A simple terminal UI for git commands, making version control fast and intuitive. Yazelix includes lazygit for easy git management.
-- [atuin](https://github.com/atuinsh/atuin) — A shell history manager with sync and search capabilities. Enhances command recall and productivity in Yazelix. 🔧 auto-configured
 - [carapace](https://github.com/rsteube/carapace-bin) — A cross-shell command-line completion engine. Improves tab completion in supported shells. 🔧 auto-configured
-- [markdown-oxide](https://oxide.md/index) — A personal knowledge management system (PKMS) that works with text editors through LSP. Included for advanced note-taking and documentation workflows.
 
 ## Yazi Extensions
 - [p7zip](https://github.com/p7zip-project/p7zip) — A port of the 7-Zip archiver. Enables archive extraction and compression in Yazi.
@@ -99,7 +97,7 @@ git = [
 **Individual packages**: Add specific tools via `user_packages` in `yazelix.toml`:
 ```toml
 [packs]
-user_packages = ["docker", "kubectl", "gleam"]
+# user_packages = ["atuin", "docker", "kubectl", "gleam"]
 ```
 
 ## Example Pack Declarations
@@ -143,6 +141,12 @@ Complete toolchains you can declare:
 - [detekt](https://github.com/detekt/detekt) — Static code analysis tool for code quality and smell detection
 - [gradle](https://gradle.org/) — Build automation tool for Kotlin/JVM projects
 
+### Writing Pack (`writing`)
+- [typst](https://typst.app/) — Modern document preparation system: a fast, markup-based alternative to LaTeX with a built-in compiler, formatter, and language server
+- [tinymist](https://github.com/Myriad-Dreamin/tinymist) — Full-featured Typst language server with LSP support (completions, diagnostics, hover, document export)
+- [pandoc](https://pandoc.org/) — Universal document converter supporting Markdown, LaTeX, HTML, Word, PDF, EPUB, and many more formats
+- [markdown-oxide](https://oxide.md/index) — Markdown PKM language server with LSP support for note links, completions, and knowledge graph navigation
+
 ### Nix Pack (`nix`)
 - [nil](https://github.com/oxalica/nil) — Nix language server for IDE features (LSP support for Helix, VSCode, etc.)
 - [nixd](https://github.com/nix-community/nixd) — Alternative Nix language server with advanced features and diagnostics
@@ -171,6 +175,28 @@ General-purpose development tools:
 - [jujutsu](https://github.com/martinvonz/jj) — Modern version control system with powerful conflict resolution (command: `jj`)
 - [lazyjj](https://github.com/Cretezy/lazyjj) — LazyGit-style TUI for jj
 - [jjui](https://github.com/idursun/jjui) — TUI for Jujutsu VCS
+
+### AI Agents Pack (`ai_agents`)
+AI coding agents sourced from [llm-agents.nix](https://github.com/numtide/llm-agents.nix) with daily updates.
+
+- [claude-code](https://github.com/anthropics/claude-code) — Claude Code CLI (Anthropic)
+- [codex](https://github.com/openai/codex) — Codex CLI for agentic coding (OpenAI)
+- [gemini-cli](https://github.com/google-gemini/gemini-cli) — Gemini CLI (Google)
+- [opencode](https://github.com/opencode-ai/opencode) — OpenCode CLI
+- [amp](https://github.com/sourcegraph/amp) — Amp coding agent
+- [cursor-agent](https://github.com/getcursor/cursor) — Cursor agent
+- [goose-cli](https://github.com/block/goose) — Goose CLI (Block)
+
+### AI Tools Pack (`ai_tools`)
+AI support tools: analytics, code review, and utilities (from llm-agents.nix).
+
+- [coderabbit-cli](https://github.com/coderabbitai/coderabbit-cli) — AI code review
+- [ccusage](https://github.com/ryoppippi/ccusage) — Claude Code usage tracker
+- ccusage-amp, ccusage-codex, ccusage-opencode — Usage trackers for other agents
+- [beads](https://github.com/lemonmade/beads) — Conversation bead manager
+- [openclaw](https://github.com/openclaw/openclaw) — OpenClaw (formerly moltbot/clawdbot)
+- [picoclaw](https://github.com/picoclaw/picoclaw) — PicoClaw
+- [zeroclaw](https://github.com/zeroclaw-labs/zeroclaw) — ZeroClaw
 
 **Usage**: Enable packs in `yazelix.toml` by listing them in `packs.enabled` and defining them in `packs.declarations`, or add individual tools via `user_packages` for fine-grained control.
 

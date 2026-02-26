@@ -2,7 +2,7 @@
 # Interactive launch sequence (runs inside devenv shell)
 
 use ../utils/config_parser.nu parse_yazelix_config
-use ../utils/constants.nu [ZELLIJ_CONFIG_PATHS, YAZELIX_ENV_VARS, YAZELIX_LOGS_DIR]
+use ../utils/constants.nu [ZELLIJ_CONFIG_PATHS, YAZELIX_LOGS_DIR]
 use ../utils/ascii_art.nu get_yazelix_colors
 use ../setup/welcome.nu [show_welcome build_welcome_message]
 use ../setup/yazi_config_merger.nu generate_merged_yazi_config
@@ -10,6 +10,8 @@ use ../setup/zellij_config_merger.nu generate_merged_zellij_config
 
 def main [cwd_override?: string, layout_override?: string] {
     let config = parse_yazelix_config
+    let sidebar_enabled = ($config.enable_sidebar? | default true)
+    let configured_layout = if $sidebar_enabled { "yzx_side" } else { "yzx_no_side" }
     let yazelix_dir = ($env.HOME | path join ".config" "yazelix")
     let quiet_mode = ($env.YAZELIX_ENV_ONLY? == "true")
 
@@ -40,10 +42,10 @@ def main [cwd_override?: string, layout_override?: string] {
     let layout_path = if ($layout_override | is-not-empty) {
         $layout_override
     } else {
-        let layout = if ($env.ZELLIJ_DEFAULT_LAYOUT? | is-not-empty) {
+        let layout = if ($env.YAZELIX_SWEEP_TEST_ID? | is-not-empty) and ($env.ZELLIJ_DEFAULT_LAYOUT? | is-not-empty) {
             $env.ZELLIJ_DEFAULT_LAYOUT
         } else {
-            $YAZELIX_ENV_VARS.ZELLIJ_DEFAULT_LAYOUT
+            $configured_layout
         }
         if ($layout | str contains "/") or ($layout | str ends-with ".kdl") {
             $layout
@@ -56,8 +58,28 @@ def main [cwd_override?: string, layout_override?: string] {
         # Check if session already exists
         let existing_sessions = (do { ^zellij list-sessions } | complete)
         let session_exists = if $existing_sessions.exit_code == 0 {
-            let sessions = ($existing_sessions.stdout | lines | where {|s| $s | str contains $config.session_name})
-            ($sessions | is-not-empty)
+            let sessions = (
+                $existing_sessions.stdout
+                | lines
+                | each {|line|
+                    let clean_line = (
+                        $line
+                        | str replace -ra '\u001b\[[0-9;]*[A-Za-z]' ''
+                        | str replace -r '^>\s*' ''
+                        | str trim
+                    )
+                    if ($clean_line | is-empty) {
+                        null
+                    } else {
+                        $clean_line
+                        | split row " "
+                        | where {|token| $token != ""}
+                        | first
+                    }
+                }
+                | where ($it | is-not-empty)
+            )
+            ($sessions | any {|name| $name == $config.session_name})
         } else {
             false
         }

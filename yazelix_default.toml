@@ -7,7 +7,7 @@
 
 [core]
 # See docs/package_sizes.md for details
-recommended_deps = true       # Productivity tools (~350MB): lazygit, atuin, carapace, markdown-oxide
+recommended_deps = true       # Productivity tools (~350MB): lazygit, carapace
 yazi_extensions = true        # File preview support (~125MB): p7zip, jq, fd, ripgrep, poppler
 yazi_media = false            # Media processing (~1GB): ffmpeg, imagemagick
 debug_mode = false            # Enable verbose debug logging in the shellHook
@@ -83,9 +83,6 @@ extra_shells = [
   # "zsh",
 ]
 
-# Atuin shell history integration (default: false)
-# Provides smart shell history with sync capabilities
-enable_atuin = false
 
 [terminal]
 # Terminal emulator preference + install list (ordered)
@@ -240,6 +237,7 @@ theme = "default"
 
 # Sort files by
 # Options: "alphabetical", "natural", "modified", "created", "size"
+# This value is the source of truth and overrides any sort_by in configs/yazi/user/yazi.toml
 sort_by = "alphabetical"
 
 [ascii]
@@ -251,6 +249,8 @@ mode = "static"
 [packs]
 # Enable packs by name (see packs.declarations below)
 enabled = [
+  # "ai_agents",
+  # "ai_tools",
   # "config",
   # "file-management",
   # "git",
@@ -260,6 +260,7 @@ enabled = [
   # "rust_extra",
   # "nix",
   # "ts",
+  # "writing",
   # "go",
   # "go_extra",
   # "kotlin",
@@ -271,15 +272,46 @@ enabled = [
 # Note: Package names must exist in nixpkgs
 # Search packages at: https://search.nixos.org/packages
 user_packages = [
+  # "atuin", # Shell history manager with sync — auto-configured when detected
   # "gleam",
 ]
 
 [packs.declarations]
-# Pack declarations are lists of nixpkgs package names (supports dotted paths).
-# Pack packages always resolve against the configured nixpkgs input (currently unstable).
+# Pack declarations are lists of package names.
+# AI tools resolve from llm-agents.nix (daily updates), others from nixpkgs.
 # Uncomment entries below to build your own packs.
 
-# Tool packs
+# AI coding agents (from llm-agents.nix)
+ai_agents = [
+  "claude-code",    # Claude Code CLI (Anthropic)
+  "codex",          # Codex CLI (OpenAI)
+  "gemini-cli",     # Gemini CLI (Google)
+  "opencode",       # OpenCode CLI
+  "amp",            # Amp coding agent
+  "cursor-agent",   # Cursor agent
+  "goose-cli",      # Goose CLI (Block)
+]
+
+# AI support tools: analytics, review, utilities (from llm-agents.nix)
+ai_tools = [
+  # Code review
+  "coderabbit-cli", # AI code review
+  # Usage analytics
+  "ccusage",        # Claude Code usage tracker
+  "ccusage-amp",    # Amp usage tracker
+  "ccusage-codex",  # Codex usage tracker
+  "ccusage-opencode", # OpenCode usage tracker
+  # Utilities
+  "beads",          # Conversation bead manager
+  "openclaw",       # OpenClaw (formerly moltbot/clawdbot)
+  "picoclaw",       # PicoClaw
+  "zeroclaw",      # ZeroClaw
+]
+
+# Unfree packages from nixpkgs (enables NIXPKGS_ALLOW_UNFREE=1)
+# Add unfree nixpkgs packages here if needed
+# unfree = []
+
 config = [
   "mpls", # Markdown Preview LSP
   "yaml-language-server", # YAML language server
@@ -352,4 +384,11 @@ kotlin = [
   "ktlint", # Kotlin linter/formatter
   "detekt", # Kotlin static analysis
   "gradle", # Build tool for Kotlin/JVM
+]
+
+writing = [
+  "typst",           # Typst compiler, formatter, and language server
+  "tinymist",        # Full-featured Typst language server (LSP)
+  "pandoc",          # Universal document converter (Markdown, LaTeX, Word, PDF, EPUB, ...)
+  "markdown-oxide",  # Markdown PKM language server (LSP for notes and links)
 ]
