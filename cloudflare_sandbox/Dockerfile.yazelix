@@ -185,7 +185,7 @@ RUN wget -q "https://github.com/dj95/zjstatus/releases/download/v${ZJSTATUS_VERS
 # ============================================================================
 # Stage 2: Runtime image based on Cloudflare Sandbox
 # ============================================================================
-FROM docker.io/cloudflare/sandbox:0.7.0 AS runtime
+FROM docker.io/cloudflare/sandbox:0.7.5 AS runtime
 
 # Accept version for labeling
 ARG YAZELIX_VERSION=1.0.0
@@ -193,7 +193,7 @@ ARG YAZELIX_VERSION=1.0.0
 LABEL org.opencontainers.image.title="Yazelix Sandbox"
 LABEL org.opencontainers.image.description="Yazi + Zellij + Helix terminal IDE in Cloudflare Sandbox"
 LABEL org.opencontainers.image.version="${YAZELIX_VERSION}"
-LABEL org.opencontainers.image.source="https://github.com/luccahuguet/yazelix"
+LABEL org.opencontainers.image.source="https://github.com/danielbodnar/yazelix"
 
 # Required during local development
 EXPOSE 8080

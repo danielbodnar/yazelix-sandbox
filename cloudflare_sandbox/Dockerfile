@@ -1,7 +1,7 @@
 # Yazelix Sandbox Container
 # Based on Cloudflare Sandbox with essential development tools
 
-FROM docker.io/cloudflare/sandbox:0.7.0
+FROM docker.io/cloudflare/sandbox:0.7.5
 
 # Required during local development to access exposed ports
 EXPOSE 8080
