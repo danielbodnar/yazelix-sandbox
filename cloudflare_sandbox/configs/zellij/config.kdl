@@ -1,0 +1,133 @@
+// Zellij Configuration for Yazelix Sandbox
+// https://zellij.dev/documentation/configuration.html
+
+// Theme and appearance
+theme "catppuccin-mocha"
+default_shell "nu"
+pane_frames true
+simplified_ui false
+default_layout "yazelix"
+mouse_mode true
+scroll_buffer_size 50000
+copy_on_select true
+scrollback_editor "hx"
+
+// Session management
+session_serialization true
+auto_layout true
+
+// Web server configuration (for remote access)
+// The web server will be started via the startup script
+// These settings configure it when started
+web_server true
+web_server_ip "0.0.0.0"
+web_server_port 8082
+
+// Web client terminal settings
+web_client {
+  font "monospace"
+  cursor_blink false
+  cursor_style "block"
+  cursor_inactive_style "outline"
+  mac_option_is_meta true
+  theme {
+    // Catppuccin Mocha colors
+    background 30 30 46
+    foreground 205 214 244
+    black 69 71 90
+    red 243 139 168
+    green 166 227 161
+    yellow 249 226 175
+    blue 137 180 250
+    magenta 245 194 231
+    cyan 148 226 213
+    white 186 194 222
+    bright_black 88 91 112
+    bright_red 243 139 168
+    bright_green 166 227 161
+    bright_yellow 249 226 175
+    bright_blue 137 180 250
+    bright_magenta 245 194 231
+    bright_cyan 148 226 213
+    bright_white 205 214 244
+    cursor 205 214 244
+    cursor_accent 30 30 46
+    selection_background 69 71 90
+    selection_foreground 205 214 244
+  }
+}
+
+// UI customization
+ui {
+  pane_frames {
+    hide_session_name true
+  }
+}
+
+// Plugin configuration
+plugins {
+  // zjstatus is loaded from the bundled wasm file
+}
+
+// Keybindings
+keybinds clear-defaults=false {
+  // Normal mode keybindings
+  normal {
+    // Quick session access
+    bind "Ctrl o" { SwitchToMode "Session"; }
+    // Quick pane navigation
+    bind "Alt h" { MoveFocusOrTab "Left"; }
+    bind "Alt l" { MoveFocusOrTab "Right"; }
+    bind "Alt j" { MoveFocus "Down"; }
+    bind "Alt k" { MoveFocus "Up"; }
+    // Quick resize
+    bind "Alt H" { Resize "Left"; }
+    bind "Alt L" { Resize "Right"; }
+    bind "Alt J" { Resize "Down"; }
+    bind "Alt K" { Resize "Up"; }
+    // Quick new pane
+    bind "Alt n" { NewPane; }
+    bind "Alt -" { NewPane "Down"; }
+    bind "Alt |" { NewPane "Right"; }
+    // Toggle fullscreen
+    bind "Alt f" { ToggleFocusFullscreen; }
+    // Close pane
+    bind "Alt q" { CloseFocus; }
+  }
+
+  // Shared keybindings
+  shared {
+    bind "Alt 1" { GoToTab 1; }
+    bind "Alt 2" { GoToTab 2; }
+    bind "Alt 3" { GoToTab 3; }
+    bind "Alt 4" { GoToTab 4; }
+    bind "Alt 5" { GoToTab 5; }
+    bind "Alt 6" { GoToTab 6; }
+    bind "Alt 7" { GoToTab 7; }
+    bind "Alt 8" { GoToTab 8; }
+    bind "Alt 9" { GoToTab 9; }
+  }
+
+  // Session mode for web sharing
+  session {
+    bind "s" {
+      LaunchOrFocusPlugin "share" {
+        floating true
+      }
+    }
+    bind "w" {
+      // Start web server (if not already running)
+      Run "zellij" "web" {
+        close_on_exit false
+      }
+    }
+  }
+}
+
+// Environment passthrough
+env {
+  EDITOR "hx"
+  VISUAL "hx"
+  HELIX_RUNTIME "/usr/local/yazelix/share/helix/runtime"
+  YAZI_CONFIG_HOME "/root/.config/yazi"
+}

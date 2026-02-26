@@ -1,0 +1,96 @@
+// Yazelix Layout - IDE-like layout with file manager, editor, and terminal
+// This layout provides a typical IDE experience with:
+// - Left sidebar: Yazi file manager (20%)
+// - Main area: Helix editor (60%)
+// - Bottom: Terminal pane (20%)
+
+layout {
+  // Default tab with IDE layout
+  default_tab_template {
+    pane size=1 borderless=true {
+      plugin location="file:/usr/local/yazelix/share/zjstatus/zjstatus.wasm" {
+        format_left   "{mode}#[fg=#89b4fa,bg=#181825] {session}#[fg=#181825,bg=#313244]"
+        format_center "{tabs}"
+        format_right  "#[fg=#313244,bg=#181825]#[fg=#cdd6f4,bg=#313244] {datetime}#[fg=#89b4fa,bg=#313244]#[fg=#181825,bg=#89b4fa] 󰖟 {swap_layout}"
+        format_space  "#[bg=#181825]"
+
+        border_enabled  "false"
+        border_char     "─"
+        border_format   "#[fg=#6c7086]{char}"
+        border_position "top"
+
+        hide_frame_for_single_pane "false"
+
+        mode_normal        "#[fg=#a6e3a1,bg=#181825,bold] NORMAL"
+        mode_locked        "#[fg=#f38ba8,bg=#181825,bold] LOCKED"
+        mode_resize        "#[fg=#f9e2af,bg=#181825,bold] RESIZE"
+        mode_pane          "#[fg=#89b4fa,bg=#181825,bold] PANE"
+        mode_tab           "#[fg=#cba6f7,bg=#181825,bold] TAB"
+        mode_scroll        "#[fg=#fab387,bg=#181825,bold] SCROLL"
+        mode_enter_search  "#[fg=#89dceb,bg=#181825,bold] SEARCH"
+        mode_search        "#[fg=#89dceb,bg=#181825,bold] SEARCH"
+        mode_rename_tab    "#[fg=#f9e2af,bg=#181825,bold] RENAME"
+        mode_rename_pane   "#[fg=#f9e2af,bg=#181825,bold] RENAME"
+        mode_session       "#[fg=#cba6f7,bg=#181825,bold] SESSION"
+        mode_move          "#[fg=#f5c2e7,bg=#181825,bold] MOVE"
+        mode_prompt        "#[fg=#89dceb,bg=#181825,bold] PROMPT"
+        mode_tmux          "#[fg=#fab387,bg=#181825,bold] TMUX"
+
+        tab_normal              "#[fg=#6c7086,bg=#181825] {name}"
+        tab_normal_fullscreen   "#[fg=#6c7086,bg=#181825] {name} []"
+        tab_normal_sync         "#[fg=#6c7086,bg=#181825] {name} <>"
+        tab_active              "#[fg=#89b4fa,bg=#181825,bold] {name}"
+        tab_active_fullscreen   "#[fg=#89b4fa,bg=#181825,bold] {name} []"
+        tab_active_sync         "#[fg=#89b4fa,bg=#181825,bold] {name} <>"
+        tab_separator           "#[fg=#45475a,bg=#181825] | "
+
+        datetime          "#[fg=#cdd6f4,bg=#313244] {format}"
+        datetime_format   "%Y-%m-%d %H:%M"
+        datetime_timezone "UTC"
+      }
+    }
+    children
+  }
+
+  // Main IDE tab
+  tab name="IDE" focus=true {
+    pane split_direction="vertical" {
+      // Left sidebar - File manager
+      pane size="20%" name="files" {
+        command "yazi"
+        args "/workspace"
+      }
+      // Main area
+      pane split_direction="horizontal" size="80%" {
+        // Editor pane (top)
+        pane size="75%" name="editor" focus=true {
+          command "hx"
+          args "."
+        }
+        // Terminal pane (bottom)
+        pane size="25%" name="terminal" {
+          command "nu"
+        }
+      }
+    }
+  }
+
+  // Second tab for additional terminals
+  tab name="Term" {
+    pane split_direction="horizontal" {
+      pane name="main" {
+        command "nu"
+      }
+      pane name="secondary" {
+        command "nu"
+      }
+    }
+  }
+
+  // Third tab for git operations
+  tab name="Git" {
+    pane name="lazygit" {
+      command "lazygit"
+    }
+  }
+}
